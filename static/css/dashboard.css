@@ -1,0 +1,290 @@
+/* PackSmart Enterprise Design System Tokens */
+:root {
+    --ps-navy-900: #0B192C;
+    --ps-navy-800: #132438;
+    --ps-navy-700: #1E3E62;
+    --ps-blue-600: #1D4ED8;
+    --ps-blue-500: #2563EB;
+    --ps-blue-50:  #EFF6FF;
+    --ps-slate-50: #F8FAFC;
+    --ps-slate-100: #F1F5F9;
+    --ps-slate-200: #E2E8F0;
+    --ps-slate-300: #CBD5E1;
+    --ps-slate-400: #94A3B8;
+    --ps-slate-500: #64748B;
+    --ps-slate-700: #334155;
+    --ps-slate-900: #0F172A;
+
+    --ps-emerald-600: #059669;
+    --ps-emerald-500: #10B981;
+    --ps-emerald-50:  #ECFDF5;
+    
+    --ps-amber-600: #D97706;
+    --ps-amber-500: #F59E0B;
+    --ps-amber-50:  #FFFBEB;
+
+    --ps-rose-600: #E11D48;
+    --ps-rose-500: #F43F5E;
+    --ps-rose-50:  #FFF1F2;
+
+    --sidebar-width: 260px;
+    --topbar-height: 64px;
+}
+
+body {
+    background-color: var(--ps-slate-50);
+    color: var(--ps-slate-900);
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    overflow-x: hidden;
+}
+
+/* Monospace Utilities */
+.font-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+}
+
+/* Layout Shell */
+#app-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+#app-sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--ps-navy-900);
+    color: #FFFFFF;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    z-index: 1030;
+    transition: transform 0.25s ease-in-out;
+}
+
+.sidebar-brand {
+    height: var(--topbar-height);
+    display: flex;
+    align-items: center;
+    padding: 0 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: #FFFFFF;
+    text-decoration: none;
+    letter-spacing: -0.3px;
+}
+
+.sidebar-nav {
+    padding: 1rem 0.75rem;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.nav-section-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ps-slate-400);
+    font-weight: 700;
+    padding: 0.5rem 0.75rem 0.25rem;
+}
+
+.sidebar-nav .nav-link {
+    color: var(--ps-slate-300);
+    padding: 0.6rem 0.85rem;
+    border-radius: 8px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2px;
+    transition: all 0.15s ease;
+}
+
+.sidebar-nav .nav-link i {
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+    color: var(--ps-slate-400);
+    transition: color 0.15s ease;
+}
+
+.sidebar-nav .nav-link:hover {
+    color: #FFFFFF;
+    background-color: var(--ps-navy-800);
+}
+
+.sidebar-nav .nav-link:hover i {
+    color: #FFFFFF;
+}
+
+.sidebar-nav .nav-link.active {
+    color: #FFFFFF;
+    background-color: var(--ps-blue-600);
+}
+
+.sidebar-nav .nav-link.active i {
+    color: #FFFFFF;
+}
+
+.sidebar-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background-color: rgba(0, 0, 0, 0.15);
+    font-size: 0.8rem;
+}
+
+/* Main Content Area */
+#app-main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+/* Top Navigation Bar */
+#app-topbar {
+    height: var(--topbar-height);
+    background-color: #FFFFFF;
+    border-bottom: 1px solid var(--ps-slate-200);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.75rem;
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+}
+
+.page-title-badge {
+    font-size: 0.78rem;
+    background-color: var(--ps-slate-100);
+    color: var(--ps-slate-700);
+    border: 1px solid var(--ps-slate-200);
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+/* Cards & Surfaces */
+.card-kpi {
+    border: 1px solid var(--ps-slate-200);
+    border-radius: 10px;
+    background-color: #FFFFFF;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card-kpi:hover {
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.08);
+}
+
+.kpi-icon-bubble {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.kpi-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--ps-slate-900);
+}
+
+.kpi-label {
+    font-size: 0.82rem;
+    color: var(--ps-slate-500);
+    font-weight: 500;
+    margin-bottom: 0.35rem;
+}
+
+/* Enterprise Data Tables */
+.table-enterprise {
+    margin-bottom: 0;
+}
+
+.table-enterprise thead th {
+    background-color: var(--ps-slate-50);
+    color: var(--ps-slate-500);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--ps-slate-200);
+    padding: 0.8rem 1rem;
+    white-space: nowrap;
+}
+
+.table-enterprise tbody td {
+    padding: 0.85rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--ps-slate-200);
+    font-size: 0.875rem;
+}
+
+.table-enterprise tbody tr:hover td {
+    background-color: rgba(248, 250, 252, 0.8);
+}
+
+/* Status Badges */
+.badge-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.3em 0.7em;
+    border-radius: 5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.badge-status-evaluated {
+    background-color: var(--ps-emerald-50);
+    color: var(--ps-emerald-600);
+    border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+.badge-status-packed {
+    background-color: var(--ps-blue-50);
+    color: var(--ps-blue-600);
+    border: 1px solid rgba(29, 78, 216, 0.2);
+}
+
+.badge-status-draft {
+    background-color: var(--ps-slate-100);
+    color: var(--ps-slate-700);
+    border: 1px solid var(--ps-slate-200);
+}
+
+.badge-status-failed {
+    background-color: var(--ps-rose-50);
+    color: var(--ps-rose-600);
+    border: 1px solid rgba(225, 29, 72, 0.2);
+}
+
+/* Responsive Mobile Rules */
+@media (max-width: 991.98px) {
+    #app-sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        transform: translateX(-100%);
+    }
+    #app-sidebar.show {
+        transform: translateX(0);
+    }
+    .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        background-color: rgba(15, 23, 42, 0.6);
+        z-index: 1025;
+    }
+}
+

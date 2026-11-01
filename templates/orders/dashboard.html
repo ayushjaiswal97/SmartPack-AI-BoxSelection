@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}Operations Dashboard &bull; PackSmart{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h1 class="h3 fw-bold mb-1 text-dark">
+            <i class="bi bi-grid-1x2 text-primary me-2"></i>Warehouse Operations Console
+        </h1>
+        <p class="text-muted small mb-0">Real-time fulfillment metrics, packaging cavity optimization, and active dispatch queue.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <a href="{% url 'orders:simulator' %}" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
+            <i class="bi bi-cpu-fill"></i>
+            <span>Launch Box Recommender</span>
+        </a>
+    </div>
+</div>
+
+<!-- KPI Metric Cards Grid -->
+<div class="row g-3 mb-4">
+    <!-- Card 1: Total Products -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-kpi p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="kpi-label">Master Catalog SKUs</div>
+                    <div class="kpi-value">{{ total_products }}</div>
+                    <div class="text-muted small mt-1">
+                        <i class="bi bi-box-arrow-in-right text-primary me-1"></i>Active inventory items
+                    </div>
+                </div>
+                <div class="kpi-icon-bubble" style="background-color: var(--ps-blue-50); color: var(--ps-blue-600);">
+                    <i class="bi bi-tags-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: Available Shipping Boxes -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-kpi p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="kpi-label">Active Shipping Boxes</div>
+                    <div class="kpi-value">{{ active_boxes }} <span class="fs-6 text-muted fw-normal">/ {{ total_boxes }}</span></div>
+                    <div class="text-muted small mt-1">
+                        <i class="bi bi-check2-circle text-success me-1"></i>Available for 3D engine
+                    </div>
+                </div>
+                <div class="kpi-icon-bubble" style="background-color: var(--ps-emerald-50); color: var(--ps-emerald-600);">
+                    <i class="bi bi-boxes"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Total Orders -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-kpi p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="kpi-label">Total Customer Orders</div>
+                    <div class="kpi-value">{{ total_orders }}</div>
+                    <div class="text-muted small mt-1">
+                        <span class="text-success fw-semibold">{{ orders_evaluated }}</span> evaluated &bull;
+                        <span class="text-primary fw-semibold">{{ orders_packed }}</span> packed
+                    </div>
+                </div>
+                <div class="kpi-icon-bubble" style="background-color: var(--ps-blue-50); color: var(--ps-blue-500);">
+                    <i class="bi bi-cart-check-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 4: Orders Awaiting Packaging -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-kpi p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="kpi-label">Awaiting Packaging</div>
+                    <div class="kpi-value {% if orders_awaiting > 0 %}text-warning{% endif %}">{{ orders_awaiting }}</div>
+                    <div class="text-muted small mt-1">
+                        {% if orders_failed > 0 %}
+                            <span class="text-danger fw-semibold"><i class="bi bi-exclamation-triangle me-1"></i>{{ orders_failed }} infeasible</span>
+                        {% else %}
+                            <i class="bi bi-check-all text-success me-1"></i>Queue operational
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="kpi-icon-bubble" style="background-color: var(--ps-amber-50); color: var(--ps-amber-600);">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Operations Grid (Col-8 & Col-4) -->
+<div class="row g-4">
+    <!-- Left Column: Recent Orders & Dispatch Queue -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 h-100" style="border: 1px solid var(--ps-slate-200) !important; border-radius: 10px;">
+            <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-inbox-fill text-primary"></i>
+                    <h5 class="mb-0 fw-bold fs-6">Active Dispatch Queue & Recent Orders</h5>
+                </div>
+                <a href="{% url 'orders:order_list' %}" class="btn btn-sm btn-outline-secondary">
+                    View All Orders <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-enterprise align-middle">
+                        <thead>
+                            <tr>
+                                <th>Order Ref</th>
+                                <th>Customer Reference</th>
+                                <th>Total Weight</th>
+                                <th>Item Vol</th>
+                                <th>Assigned Box</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'orders:recommendation' order.order_number %}" class="font-mono fw-bold text-decoration-none text-primary">
+                                            #{{ order.order_number }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% if order.customer_reference %}
+                                            <span class="fw-semibold text-dark">{{ order.customer_reference }}</span>
+                                        {% else %}
+                                            <span class="text-muted small fst-italic">Standard Dispatch</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ order.total_weight }} <span class="text-muted small">kg</span></td>
+                                    <td>{{ order.total_volume|floatformat:1 }} <span class="text-muted small">cm³</span></td>
+                                    <td>
+                                        {% if order.selected_box %}
+                                            <span class="fw-semibold text-dark">{{ order.selected_box.name }}</span>
+                                            <span class="badge bg-light text-success border ms-1 font-mono">${{ order.packaging_cost }}</span>
+                                        {% else %}
+                                            <span class="text-muted small fst-italic">None (Infeasible)</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if order.status == 'EVALUATED' %}
+                                            <span class="badge-status badge-status-evaluated"><i class="bi bi-check-circle-fill"></i> Feasible</span>
+                                        {% elif order.status == 'PACKED' %}
+                                            <span class="badge-status badge-status-packed"><i class="bi bi-box2-fill"></i> Packed</span>
+                                        {% elif order.status == 'FAILED' %}
+                                            <span class="badge-status badge-status-failed"><i class="bi bi-exclamation-triangle-fill"></i> Infeasible</span>
+                                        {% else %}
+                                            <span class="badge-status badge-status-draft"><i class="bi bi-pencil-fill"></i> {{ order.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{% url 'orders:recommendation' order.order_number %}" class="btn btn-sm btn-outline-primary" title="View packing recommendation and 3D diagram">
+                                            <i class="bi bi-box-arrow-up-right me-1"></i> Inspect
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                                        <p class="mb-2 fw-semibold">No active orders in the dispatch queue.</p>
+                                        <a href="{% url 'orders:simulator' %}" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-plus-circle me-1"></i> Create First Simulation
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Materials Reference & Operations Quick Panel -->
+    <div class="col-lg-4">
+        <!-- Card: Fast Action Hub -->
+        <div class="card shadow-sm border-0 mb-4" style="border: 1px solid var(--ps-slate-200) !important; border-radius: 10px;">
+            <div class="card-header bg-white border-bottom py-3 px-4">
+                <h6 class="mb-0 fw-bold fs-6"><i class="bi bi-lightning-charge-fill text-warning me-2"></i>Station Shortcuts</h6>
+            </div>
+            <div class="card-body p-3">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'orders:simulator' %}" class="btn btn-outline-primary text-start p-2 d-flex align-items-center gap-3">
+                        <div class="kpi-icon-bubble" style="background-color: var(--ps-blue-50); color: var(--ps-blue-600); width: 36px; height: 36px;">
+                            <i class="bi bi-cpu"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold text-dark">Simulate Order Packing</div>
+                            <div class="text-muted small">Assemble items & find lowest-cost box</div>
+                        </div>
+                    </a>
+                    <a href="{% url 'catalog:product_create' %}" class="btn btn-outline-secondary text-start p-2 d-flex align-items-center gap-3">
+                        <div class="kpi-icon-bubble" style="background-color: var(--ps-slate-100); color: var(--ps-slate-700); width: 36px; height: 36px;">
+                            <i class="bi bi-plus-square"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold text-dark">Register New SKU</div>
+                            <div class="text-muted small">Add dimensions & weights to catalog</div>
+                        </div>
+                    </a>
+                    <a href="{% url 'catalog:box_create' %}" class="btn btn-outline-secondary text-start p-2 d-flex align-items-center gap-3">
+                        <div class="kpi-icon-bubble" style="background-color: var(--ps-emerald-50); color: var(--ps-emerald-600); width: 36px; height: 36px;">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold text-dark">Add Shipping Box</div>
+                            <div class="text-muted small">Configure internal clearances & costs</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card: Shipping Box Cavities Reference -->
+        <div class="card shadow-sm border-0" style="border: 1px solid var(--ps-slate-200) !important; border-radius: 10px;">
+            <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold fs-6"><i class="bi bi-box-seam text-primary me-2"></i>Active Packaging Sizes</h6>
+                <a href="{% url 'catalog:box_list' %}" class="small text-decoration-none">Manage All</a>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush small">
+                    {% for box in active_boxes_sample %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-4">
+                            <div>
+                                <span class="fw-semibold d-block text-dark">{{ box.name }}</span>
+                                <span class="text-muted font-mono" style="font-size: 0.78rem;">
+                                    {{ box.internal_length }}×{{ box.internal_width }}×{{ box.internal_height }} cm &bull; Max {{ box.max_weight_capacity }} kg
+                                </span>
+                            </div>
+                            <span class="badge bg-light text-success border font-mono fs-7">${{ box.packaging_cost }}</span>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-center text-muted py-3">No active shipping boxes found.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

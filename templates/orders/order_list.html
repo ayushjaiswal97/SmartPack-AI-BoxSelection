@@ -1,87 +1,265 @@
 {% extends "base.html" %}
 
-{% block title %}Packing History & Logs | SmartPack{% endblock %}
+{% block title %}Order Dispatch & Recommendation Audit Log | PackSmart Enterprise{% endblock %}
 
 {% block content %}
+<!-- Breadcrumbs & Header -->
 <div class="row align-items-center mb-4">
     <div class="col">
-        <h2 class="h4 mb-0 fw-bold"><i class="bi bi-clock-history text-primary me-2"></i>Warehouse Packing History & Audit Logs</h2>
-        <p class="text-muted small mb-0">Historical log of evaluated orders, selected shipping boxes, and packaging outcomes.</p>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-muted small">
+                <li class="breadcrumb-item"><a href="{% url 'orders:dashboard' %}" class="text-decoration-none">Operations Console</a></li>
+                <li class="breadcrumb-item active text-slate-700 fw-semibold" aria-current="page">Order Management</li>
+            </ol>
+        </nav>
+        <div class="d-flex align-items-center gap-2">
+            <h1 class="h3 fw-bold mb-0 text-slate-900">Order Dispatch & Packaging History</h1>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 font-mono">
+                {{ paginator.count }} Recorded Order{{ paginator.count|pluralize }}
+            </span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">
+            Track multi-item customer orders, algorithm packaging evaluations, assigned shipping boxes, and fulfillment logs.
+        </p>
     </div>
-    <div class="col-auto">
-        <a href="{% url 'orders:simulator' %}" class="btn btn-primary btn-sm">
-            <i class="bi bi-plus-circle me-1"></i> New Simulation
+    <div class="col-auto d-flex gap-2">
+        <a href="{% url 'orders:simulator' %}" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-sm">
+            <i class="bi bi-box-seam"></i>
+            <span>Simulate / Pack Order</span>
         </a>
     </div>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-muted small text-uppercase">
-                    <tr>
-                        <th>Order Reference</th>
-                        <th>Status</th>
-                        <th>Selected Box</th>
-                        <th>Total Weight</th>
-                        <th>Total Volume</th>
-                        <th>Packaging Cost</th>
-                        <th>Evaluated At</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for order in orders %}
-                        <tr>
-                            <td>
-                                <a href="{% url 'orders:recommendation' order.order_number %}" class="fw-bold font-monospace text-decoration-none">
-                                    {{ order.order_number }}
-                                </a>
-                            </td>
-                            <td>
-                                {% if order.status == 'EVALUATED' %}
-                                    <span class="badge bg-success-subtle text-success">Feasible</span>
-                                {% elif order.status == 'FAILED' %}
-                                    <span class="badge bg-danger-subtle text-danger">Infeasible</span>
-                                {% else %}
-                                    <span class="badge bg-secondary-subtle text-secondary">{{ order.get_status_display }}</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if order.selected_box %}
-                                    <span class="fw-semibold">{{ order.selected_box.name }}</span>
-                                {% else %}
-                                    <span class="text-muted fst-italic">None (Infeasible)</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ order.total_weight }} kg</td>
-                            <td>{{ order.total_volume|floatformat:1 }} cm³</td>
-                            <td>
-                                {% if order.packaging_cost %}
-                                    <span class="text-success fw-bold">${{ order.packaging_cost }}</span>
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-muted small">{{ order.created_at|date:"M d, Y H:i" }}</td>
-                            <td class="text-end">
-                                <a href="{% url 'orders:recommendation' order.order_number %}" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-eye me-1"></i> View Result
-                                </a>
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="8" class="text-center py-4 text-muted">
-                                No packing history records found. Run a simulation to evaluate your first order.
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<!-- Status Filter Tabs Strip -->
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a href="{% url 'orders:order_list' %}?status=all{% if search_query %}&q={{ search_query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" 
+       class="btn btn-sm {% if current_status == 'all' %}btn-dark{% else %}btn-outline-secondary bg-white text-slate-700{% endif %} rounded-pill px-3">
+        All Orders <span class="badge {% if current_status == 'all' %}bg-secondary text-white{% else %}bg-slate-100 text-slate-700{% endif %} ms-1 font-mono">{{ count_all }}</span>
+    </a>
+    <a href="{% url 'orders:order_list' %}?status=EVALUATED{% if search_query %}&q={{ search_query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" 
+       class="btn btn-sm {% if current_status == 'EVALUATED' %}btn-success{% else %}btn-outline-secondary bg-white text-slate-700{% endif %} rounded-pill px-3">
+        <i class="bi bi-check-circle-fill me-1 text-success"></i> Feasible / Evaluated 
+        <span class="badge {% if current_status == 'EVALUATED' %}bg-white text-success{% else %}bg-slate-100 text-slate-700{% endif %} ms-1 font-mono">{{ count_evaluated }}</span>
+    </a>
+    <a href="{% url 'orders:order_list' %}?status=DRAFT{% if search_query %}&q={{ search_query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" 
+       class="btn btn-sm {% if current_status == 'DRAFT' %}btn-warning text-dark{% else %}btn-outline-secondary bg-white text-slate-700{% endif %} rounded-pill px-3">
+        <i class="bi bi-hourglass-split me-1 text-warning"></i> Awaiting Packaging 
+        <span class="badge {% if current_status == 'DRAFT' %}bg-dark text-white{% else %}bg-slate-100 text-slate-700{% endif %} ms-1 font-mono">{{ count_draft }}</span>
+    </a>
+    <a href="{% url 'orders:order_list' %}?status=PACKED{% if search_query %}&q={{ search_query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" 
+       class="btn btn-sm {% if current_status == 'PACKED' %}btn-primary{% else %}btn-outline-secondary bg-white text-slate-700{% endif %} rounded-pill px-3">
+        <i class="bi bi-box-check-fill me-1"></i> Dispatched / Packed 
+        <span class="badge {% if current_status == 'PACKED' %}bg-white text-primary{% else %}bg-slate-100 text-slate-700{% endif %} ms-1 font-mono">{{ count_packed }}</span>
+    </a>
+    <a href="{% url 'orders:order_list' %}?status=FAILED{% if search_query %}&q={{ search_query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" 
+       class="btn btn-sm {% if current_status == 'FAILED' %}btn-danger{% else %}btn-outline-secondary bg-white text-slate-700{% endif %} rounded-pill px-3">
+        <i class="bi bi-x-octagon-fill me-1 text-danger"></i> Infeasible 
+        <span class="badge {% if current_status == 'FAILED' %}bg-white text-danger{% else %}bg-slate-100 text-slate-700{% endif %} ms-1 font-mono">{{ count_failed }}</span>
+    </a>
+</div>
+
+<!-- Search, Filter & Sort Toolbar -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+        <form method="get" action="{% url 'orders:order_list' %}" class="row g-2 align-items-center">
+            <input type="hidden" name="status" value="{{ current_status }}">
+            <div class="col-md-5 col-lg-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="q" value="{{ search_query }}" class="form-control border-start-0 ps-0" placeholder="Search order number or customer ref..." aria-label="Search Orders">
+                    {% if search_query %}
+                    <a href="{% url 'orders:order_list' %}?status={{ current_status }}&sort={{ current_sort }}" class="btn btn-outline-secondary border-start-0 border-end" title="Clear search">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-white text-muted small">
+                        <i class="bi bi-arrow-down-up me-1"></i> Sort
+                    </span>
+                    <select name="sort" class="form-select" onchange="this.form.submit()">
+                        <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Newest Created</option>
+                        <option value="oldest" {% if current_sort == 'oldest' %}selected{% endif %}>Oldest First</option>
+                        <option value="number" {% if current_sort == 'number' %}selected{% endif %}>Order Number (A-Z)</option>
+                        <option value="weight" {% if current_sort == 'weight' %}selected{% endif %}>Order Weight (Heaviest)</option>
+                        <option value="cost" {% if current_sort == 'cost' %}selected{% endif %}>Packaging Cost (Highest)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3 col-lg-2 d-flex gap-2">
+                <button type="submit" class="btn btn-secondary w-100">
+                    <i class="bi bi-funnel me-1"></i> Filter
+                </button>
+                {% if search_query or current_status != 'all' or current_sort != 'newest' %}
+                <a href="{% url 'orders:order_list' %}" class="btn btn-outline-secondary" title="Reset all filters">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+
+        {% if search_query %}
+        <div class="d-flex align-items-center gap-2 mt-2 pt-2 border-top small text-muted">
+            <span>Active Search Query:</span>
+            <span class="badge bg-light text-dark border">
+                "<strong>{{ search_query }}</strong>"
+            </span>
+            <span>({{ paginator.count }} match{{ paginator.count|pluralize:"es" }})</span>
         </div>
+        {% endif %}
     </div>
 </div>
-{% endblock %}
 
+<!-- Orders Table Card -->
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-enterprise align-middle mb-0">
+            <thead>
+                <tr>
+                    <th scope="col" style="width: 16%;">Order Reference</th>
+                    <th scope="col" style="width: 14%;">Status</th>
+                    <th scope="col" style="width: 18%;">Customer Reference</th>
+                    <th scope="col" style="width: 16%;">Item Breakdown</th>
+                    <th scope="col" style="width: 10%;">Total Weight</th>
+                    <th scope="col" style="width: 14%;">Assigned Box</th>
+                    <th scope="col" style="width: 12%;" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>
+                        <a href="{% url 'orders:order_detail' order.order_number %}" class="font-mono fw-bold text-primary text-decoration-none">
+                            #{{ order.order_number }}
+                        </a>
+                        <div class="text-muted small">{{ order.created_at|date:"M d, Y H:i" }}</div>
+                    </td>
+                    <td>
+                        {% if order.status == 'EVALUATED' %}
+                            <span class="badge-status badge-status-evaluated">
+                                <i class="bi bi-check-circle-fill"></i> Feasible
+                            </span>
+                        {% elif order.status == 'PACKED' %}
+                            <span class="badge-status badge-status-packed">
+                                <i class="bi bi-box-check-fill"></i> Dispatched
+                            </span>
+                        {% elif order.status == 'FAILED' %}
+                            <span class="badge-status badge-status-failed">
+                                <i class="bi bi-x-octagon-fill"></i> Infeasible
+                            </span>
+                        {% else %}
+                            <span class="badge-status badge-status-draft">
+                                <i class="bi bi-hourglass-split"></i> Awaiting
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if order.customer_reference %}
+                            <span class="fw-semibold text-slate-800">{{ order.customer_reference }}</span>
+                        {% else %}
+                            <span class="text-muted small fst-italic">Standard Dispatch</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border font-mono">
+                            {{ order.items.count }} SKU{{ order.items.count|pluralize }}
+                        </span>
+                        <span class="text-muted small ms-1">
+                            ({{ order.total_units|default:order.items.count }} units)
+                        </span>
+                    </td>
+                    <td>
+                        <span class="font-mono fw-semibold text-slate-800">
+                            {{ order.total_order_weight|default:order.total_weight }} kg
+                        </span>
+                    </td>
+                    <td>
+                        {% if order.selected_box %}
+                            <div class="fw-semibold text-slate-900">{{ order.selected_box.name }}</div>
+                            <div class="text-success small fw-bold font-mono">
+                                ${{ order.packaging_cost }} packaging
+                            </div>
+                        {% elif order.status == 'FAILED' %}
+                            <span class="text-danger small fw-semibold">
+                                <i class="bi bi-exclamation-circle me-1"></i> No Feasible Box
+                            </span>
+                        {% else %}
+                            <span class="text-muted small fst-italic">Pending Evaluation</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'orders:order_detail' order.order_number %}" class="btn btn-outline-secondary" title="View Order Manifest">
+                                <i class="bi bi-card-list me-1"></i> Order
+                            </a>
+                            <a href="{% url 'orders:recommendation' order.order_number %}" class="btn btn-outline-primary" title="View Recommendation & 3D Visualization">
+                                <i class="bi bi-box-seam me-1"></i> 3D Pack
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5">
+                        <div class="py-4">
+                            <i class="bi bi-inbox text-muted display-5 d-block mb-3"></i>
+                            <h6 class="fw-bold text-slate-800">No orders found matching your criteria</h6>
+                            <p class="text-muted small mb-3">Try adjusting your status filter or search parameters.</p>
+                            <a href="{% url 'orders:simulator' %}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-lg me-1"></i> Create New Simulation
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    {% if is_paginated %}
+    <div class="card-footer bg-white border-top py-3 d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2">
+        <div class="text-muted small">
+            Showing <span class="fw-semibold text-slate-700">{{ page_obj.start_index }}</span> to <span class="fw-semibold text-slate-700">{{ page_obj.end_index }}</span> of <span class="fw-semibold text-slate-700">{{ paginator.count }}</span> orders
+        </div>
+        <nav aria-label="Order pagination">
+            <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if current_status != 'all' %}&status={{ current_status }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" aria-label="Previous">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-left"></i></span></li>
+                {% endif %}
+
+                {% for num in paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active" aria-current="page"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}{% if current_status != 'all' %}&status={{ current_status }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if current_status != 'all' %}&status={{ current_status }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" aria-label="Next">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-right"></i></span></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

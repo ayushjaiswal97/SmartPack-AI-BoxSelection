@@ -186,3 +186,8 @@ class Box(models.Model):
     def internal_volume(self) -> Decimal:
         """Returns usable volume in cubic centimeters (cm³)."""
         return self.internal_length * self.internal_width * self.internal_height
+
+    @property
+    def volume(self) -> Decimal:
+        """Alias for internal_volume."""
+        return self.internal_volume

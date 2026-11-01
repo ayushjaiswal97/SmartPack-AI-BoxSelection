@@ -1,68 +1,257 @@
 {% extends "base.html" %}
 
-{% block title %}{% if form.instance.pk %}Edit Product{% else %}Add Product{% endif %} | SmartPack{% endblock %}
+{% block title %}
+    {% if form.instance.pk %}Edit Product {{ form.instance.sku }}{% else %}Add Product{% endif %} | PackSmart Enterprise
+{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
+<!-- Breadcrumbs & Header -->
+<div class="row align-items-center mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-muted small">
+                <li class="breadcrumb-item"><a href="{% url 'orders:dashboard' %}" class="text-decoration-none">Operations Console</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'catalog:product_list' %}" class="text-decoration-none">Product Catalog</a></li>
+                <li class="breadcrumb-item active text-slate-700 fw-semibold" aria-current="page">
+                    {% if form.instance.pk %}Edit SKU: {{ form.instance.sku }}{% else %}Add New SKU{% endif %}
+                </li>
+            </ol>
+        </nav>
+        <h1 class="h3 fw-bold mb-0 text-slate-900">
+            {% if form.instance.pk %}
+                Edit Product Specifications
+            {% else %}
+                Register Master Product
+            {% endif %}
+        </h1>
+        <p class="text-muted small mb-0 mt-1">
+            Ensure physical dimensional tolerances and unit mass align with warehouse packaging standards.
+        </p>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'catalog:product_list' %}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1">
+            <i class="bi bi-arrow-left"></i>
+            <span>Back to Catalog</span>
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Form Card -->
     <div class="col-lg-8">
-        <div class="card shadow-sm">
-            <div class="card-header py-3">
-                <h5 class="mb-0">
-                    <i class="bi bi-tag-fill text-primary me-2"></i>
-                    {% if form.instance.pk %}Edit Product: {{ form.instance.sku }}{% else %}Add New Product{% endif %}
-                </h5>
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold text-slate-800 d-flex align-items-center gap-2">
+                    <i class="bi bi-sliders text-primary"></i>
+                    {% if form.instance.pk %}SKU: <span class="font-mono text-primary">{{ form.instance.sku }}</span>{% else %}New SKU Definition{% endif %}
+                </h6>
             </div>
             <div class="card-body p-4">
-                <form method="post" novalidate>
+                {% if form.errors %}
+                <div class="alert alert-danger d-flex align-items-start gap-2 mb-4" role="alert">
+                    <i class="bi bi-exclamation-octagon-fill fs-5 flex-shrink-0"></i>
+                    <div>
+                        <strong class="d-block mb-1">Please correct the validation errors below:</strong>
+                        <ul class="mb-0 ps-3 small">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+
+                <form method="post" novalidate id="productMasterForm">
                     {% csrf_token %}
 
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">SKU Identifier <span class="text-danger">*</span></label>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold small text-slate-700">
+                                SKU Code <span class="text-danger">*</span>
+                            </label>
                             {{ form.sku }}
-                            {% if form.sku.errors %}<div class="text-danger small mt-1">{{ form.sku.errors }}</div>{% endif %}
+                            {% if form.sku.help_text %}
+                                <div class="form-text small">{{ form.sku.help_text }}</div>
+                            {% endif %}
                         </div>
-                        <div class="col-md-8">
-                            <label class="form-label fw-semibold">Product Name <span class="text-danger">*</span></label>
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold small text-slate-700">
+                                Product Title <span class="text-danger">*</span>
+                            </label>
                             {{ form.name }}
-                            {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors }}</div>{% endif %}
+                            {% if form.name.help_text %}
+                                <div class="form-text small">{{ form.name.help_text }}</div>
+                            {% endif %}
                         </div>
                     </div>
 
-                    <h6 class="text-muted text-uppercase small fw-bold mt-4 mb-3 border-bottom pb-2">Physical Dimensions & Weight</h6>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">Length (cm) <span class="text-danger">*</span></label>
+                    <h6 class="text-uppercase small fw-bold text-slate-500 border-bottom pb-2 mb-3">
+                        <i class="bi bi-box me-1"></i> Bounding Geometry & Mass
+                    </h6>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-6 col-md-3">
+                            <label class="form-label fw-semibold small text-slate-700">
+                                Length (cm) <span class="text-danger">*</span>
+                            </label>
                             {{ form.length }}
-                            {% if form.length.errors %}<div class="text-danger small mt-1">{{ form.length.errors }}</div>{% endif %}
+                            <div class="form-text small">Dimension along X-axis.</div>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">Width (cm) <span class="text-danger">*</span></label>
+                        <div class="col-sm-6 col-md-3">
+                            <label class="form-label fw-semibold small text-slate-700">
+                                Width (cm) <span class="text-danger">*</span>
+                            </label>
                             {{ form.width }}
-                            {% if form.width.errors %}<div class="text-danger small mt-1">{{ form.width.errors }}</div>{% endif %}
+                            <div class="form-text small">Dimension along Y-axis.</div>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">Height (cm) <span class="text-danger">*</span></label>
+                        <div class="col-sm-6 col-md-3">
+                            <label class="form-label fw-semibold small text-slate-700">
+                                Height (cm) <span class="text-danger">*</span>
+                            </label>
                             {{ form.height }}
-                            {% if form.height.errors %}<div class="text-danger small mt-1">{{ form.height.errors }}</div>{% endif %}
+                            <div class="form-text small">Dimension along Z-axis.</div>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">Weight (kg) <span class="text-danger">*</span></label>
+                        <div class="col-sm-6 col-md-3">
+                            <label class="form-label fw-semibold small text-slate-700">
+                                Mass (kg) <span class="text-danger">*</span>
+                            </label>
                             {{ form.weight }}
-                            {% if form.weight.errors %}<div class="text-danger small mt-1">{{ form.weight.errors }}</div>{% endif %}
+                            <div class="form-text small">Net retail mass.</div>
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-between mt-4">
-                        <a href="{% url 'catalog:product_list' %}" class="btn btn-outline-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary px-4">
-                            <i class="bi bi-save me-1"></i> Save Product
+                    <div class="d-flex align-items-center justify-content-between pt-3 border-top">
+                        <a href="{% url 'catalog:product_list' %}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary d-inline-flex align-items-center gap-2 px-4 shadow-sm">
+                            <i class="bi bi-check-lg"></i>
+                            <span>{% if form.instance.pk %}Update SKU{% else %}Create SKU{% endif %}</span>
                         </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+
+    <!-- Live Geometry Helper Sidebar -->
+    <div class="col-lg-4">
+        <!-- Computed Volume Card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold text-slate-800 d-flex align-items-center gap-2">
+                    <i class="bi bi-calculator text-primary"></i>
+                    Volumetric Calculation
+                </h6>
+            </div>
+            <div class="card-body p-4">
+                <div class="text-center p-3 bg-light rounded border mb-3">
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Calculated Unit Volume</div>
+                    <div class="display-6 fw-bold text-primary font-mono" id="liveVolumeCalc">0.00</div>
+                    <div class="text-muted small">Cubic Centimeters (cm³)</div>
+                </div>
+
+                <div class="small text-slate-600">
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span class="text-muted">Form Factor:</span>
+                        <span class="fw-semibold font-mono" id="liveFormFactor">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span class="text-muted">Volume in Liters:</span>
+                        <span class="fw-semibold font-mono" id="liveVolumeLiters">0.000 L</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1">
+                        <span class="text-muted">Volumetric Density:</span>
+                        <span class="fw-semibold font-mono" id="liveDensity">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Packing Engine Guidelines -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 fw-bold text-slate-800 d-flex align-items-center gap-2">
+                    <i class="bi bi-info-circle text-info"></i>
+                    Packing Rules & Guidelines
+                </h6>
+            </div>
+            <div class="card-body p-4 small text-slate-600">
+                <div class="d-flex gap-2 mb-3">
+                    <i class="bi bi-arrow-repeat text-primary fs-5 flex-shrink-0"></i>
+                    <div>
+                        <strong>6-Axis Orthogonal Rotations:</strong> The PackSmart packing engine automatically evaluates all 6 orthogonal orientations \((L \times W \times H, L \times H \times W, \dots)\) to find optimal box fit.
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mb-3">
+                    <i class="bi bi-bounding-box text-success fs-5 flex-shrink-0"></i>
+                    <div>
+                        <strong>Outer Retail Box Bounds:</strong> Enter dimensions of outer retail packaging including handles, protrusions, or protective cushions.
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <i class="bi bi-speedometer text-warning fs-5 flex-shrink-0"></i>
+                    <div>
+                        <strong>Strict Weight Limits:</strong> Boxes with insufficient maximum weight capacity will be immediately rejected regardless of available spatial volume.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const lenInput = document.querySelector('input[name="length"]');
+    const widInput = document.querySelector('input[name="width"]');
+    const hgtInput = document.querySelector('input[name="height"]');
+    const wgtInput = document.querySelector('input[name="weight"]');
+
+    const liveVolDisplay = document.getElementById('liveVolumeCalc');
+    const liveLitersDisplay = document.getElementById('liveVolumeLiters');
+    const liveFormFactor = document.getElementById('liveFormFactor');
+    const liveDensity = document.getElementById('liveDensity');
+
+    function calculateLiveMetrics() {
+        const l = parseFloat(lenInput.value) || 0;
+        const w = parseFloat(widInput.value) || 0;
+        const h = parseFloat(hgtInput.value) || 0;
+        const wt = parseFloat(wgtInput.value) || 0;
+
+        const volCm3 = l * w * h;
+        const volLiters = volCm3 / 1000;
+
+        liveVolDisplay.textContent = volCm3.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        liveLitersDisplay.textContent = volLiters.toFixed(3) + ' L';
+
+        if (l > 0 && w > 0 && h > 0) {
+            liveFormFactor.textContent = `${l} × ${w} × ${h} cm`;
+        } else {
+            liveFormFactor.textContent = '-';
+        }
+
+        if (volCm3 > 0 && wt > 0) {
+            const density = (wt * 1000 / volCm3).toFixed(3);
+            liveDensity.textContent = density + ' g/cm³';
+        } else {
+            liveDensity.textContent = '-';
+        }
+    }
+
+    if (lenInput && widInput && hgtInput && wgtInput) {
+        lenInput.addEventListener('input', calculateLiveMetrics);
+        widInput.addEventListener('input', calculateLiveMetrics);
+        hgtInput.addEventListener('input', calculateLiveMetrics);
+        wgtInput.addEventListener('input', calculateLiveMetrics);
+        calculateLiveMetrics();
+    }
+});
+</script>
+{% endblock %}

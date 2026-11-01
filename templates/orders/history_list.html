@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Recommendation History & Audit Trail | PackSmart Enterprise{% endblock %}
+
+{% block content %}
+<!-- Breadcrumbs & Header -->
+<div class="row align-items-center mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1 text-muted small">
+                <li class="breadcrumb-item"><a href="{% url 'orders:dashboard' %}" class="text-decoration-none">Operations Console</a></li>
+                <li class="breadcrumb-item active text-slate-700 fw-semibold" aria-current="page">Recommendation History</li>
+            </ol>
+        </nav>
+        <div class="d-flex align-items-center gap-2">
+            <h1 class="h3 fw-bold mb-0 text-slate-900">Recommendation History & Audit Trail</h1>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 font-mono">
+                {{ paginator.count }} Recommendation Log{{ paginator.count|pluralize }}
+            </span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">
+            Historical audit log of algorithm recommendations, selected shipping containers, spatial utilization, and unit packaging costs.
+        </p>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'orders:simulator' %}" class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-sm">
+            <i class="bi bi-cpu"></i>
+            <span>Run New Recommendation</span>
+        </a>
+    </div>
+</div>
+
+<!-- KPI Strip -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-4">
+        <div class="card card-kpi p-3 h-100">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="kpi-label">Total Recommendations</div>
+                    <div class="kpi-value text-slate-900">{{ total_evaluations }}</div>
+                </div>
+                <div class="kpi-icon-bubble bg-primary-subtle text-primary">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <div class="card card-kpi p-3 h-100">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="kpi-label">Feasible Optimizations</div>
+                    <div class="kpi-value text-success">{{ feasible_count }}</div>
+                </div>
+                <div class="kpi-icon-bubble bg-success-subtle text-success">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <div class="card card-kpi p-3 h-100">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="kpi-label">Infeasible Disqualifications</div>
+                    <div class="kpi-value text-danger">{{ infeasible_count }}</div>
+                </div>
+                <div class="kpi-icon-bubble bg-danger-subtle text-danger">
+                    <i class="bi bi-x-octagon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Filter Tabs & Search Toolbar -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-3">
+        <form method="get" action="{% url 'orders:history_list' %}" class="row g-2 align-items-center">
+            <div class="col-md-5 col-lg-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="q" value="{{ search_query }}" class="form-control border-start-0 ps-0" placeholder="Search order #, customer ref, or box name..." aria-label="Search History">
+                    {% if search_query %}
+                    <a href="{% url 'orders:history_list' %}" class="btn btn-outline-secondary border-start-0 border-end" title="Clear search">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-white text-muted small">
+                        <i class="bi bi-funnel me-1"></i> Status
+                    </span>
+                    <select name="status" class="form-select" onchange="this.form.submit()">
+                        <option value="all" {% if current_status == 'all' %}selected{% endif %}>All Outcomes</option>
+                        <option value="EVALUATED" {% if current_status == 'EVALUATED' %}selected{% endif %}>Feasible Recommendations Only</option>
+                        <option value="FAILED" {% if current_status == 'FAILED' %}selected{% endif %}>Infeasible Only</option>
+                        <option value="PACKED" {% if current_status == 'PACKED' %}selected{% endif %}>Dispatched / Packed</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3 col-lg-2 d-flex gap-2">
+                <button type="submit" class="btn btn-secondary w-100">
+                    <i class="bi bi-funnel me-1"></i> Filter
+                </button>
+                {% if search_query or current_status != 'all' %}
+                <a href="{% url 'orders:history_list' %}" class="btn btn-outline-secondary" title="Reset all filters">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+
+        {% if search_query %}
+        <div class="d-flex align-items-center gap-2 mt-2 pt-2 border-top small text-muted">
+            <span>Active Filter:</span>
+            <span class="badge bg-light text-dark border">
+                Query: "<strong>{{ search_query }}</strong>"
+            </span>
+            <span>({{ paginator.count }} record{{ paginator.count|pluralize }} found)</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- History Table Card -->
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-enterprise align-middle mb-0">
+            <thead>
+                <tr>
+                    <th scope="col" style="width: 16%;">Order Reference</th>
+                    <th scope="col" style="width: 18%;">Recommendation Date</th>
+                    <th scope="col" style="width: 22%;">Selected Shipping Box</th>
+                    <th scope="col" style="width: 12%;">Order Weight</th>
+                    <th scope="col" style="width: 10%;">Volume Util.</th>
+                    <th scope="col" style="width: 10%;">Packaging Cost</th>
+                    <th scope="col" style="width: 12%;" class="text-end">3D Audit</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in evaluations %}
+                <tr>
+                    <td>
+                        <a href="{% url 'orders:recommendation' order.order_number %}" class="font-mono fw-bold text-primary text-decoration-none">
+                            #{{ order.order_number }}
+                        </a>
+                        <div class="text-muted small">{{ order.customer_reference|default:"Standard Dispatch" }}</div>
+                    </td>
+                    <td>
+                        <div class="text-slate-800 fw-semibold">{{ order.updated_at|date:"M d, Y" }}</div>
+                        <div class="text-muted small font-mono">{{ order.updated_at|date:"H:i:s" }} UTC</div>
+                    </td>
+                    <td>
+                        {% if order.selected_box %}
+                            <div class="fw-semibold text-slate-900">{{ order.selected_box.name }}</div>
+                            <div class="text-muted small font-mono">
+                                {{ order.selected_box.internal_length }}×{{ order.selected_box.internal_width }}×{{ order.selected_box.internal_height }} cm
+                            </div>
+                        {% else %}
+                            <span class="badge bg-danger-subtle text-danger">
+                                <i class="bi bi-x-octagon me-1"></i> Infeasible
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="font-mono text-slate-800">
+                            {{ order.total_order_weight|default:order.total_weight }} kg
+                        </span>
+                    </td>
+                    <td>
+                        {% if order.packing_result %}
+                            <span class="badge bg-primary-subtle text-primary font-mono">
+                                {{ order.packing_result.volume_utilization_pct|floatformat:1 }}%
+                            </span>
+                        {% else %}
+                            <span class="text-muted small">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if order.packaging_cost %}
+                            <span class="fw-bold text-success font-mono fs-6">
+                                ${{ order.packaging_cost }}
+                            </span>
+                        {% else %}
+                            <span class="text-muted font-mono">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'orders:recommendation' order.order_number %}" class="btn btn-sm btn-outline-primary" title="View 3D Layout & Placements">
+                            <i class="bi bi-box-seam me-1"></i> View 3D
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5">
+                        <div class="py-4">
+                            <i class="bi bi-clock-history text-muted display-5 d-block mb-3"></i>
+                            <h6 class="fw-bold text-slate-800">No recommendation history found</h6>
+                            <p class="text-muted small mb-3">Run packaging simulations or evaluate orders to generate audit logs.</p>
+                            <a href="{% url 'orders:simulator' %}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-play-circle me-1"></i> Simulate Order
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    {% if is_paginated %}
+    <div class="card-footer bg-white border-top py-3 d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2">
+        <div class="text-muted small">
+            Showing <span class="fw-semibold text-slate-700">{{ page_obj.start_index }}</span> to <span class="fw-semibold text-slate-700">{{ page_obj.end_index }}</span> of <span class="fw-semibold text-slate-700">{{ paginator.count }}</span> audit logs
+        </div>
+        <nav aria-label="History pagination">
+            <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if current_status != 'all' %}&status={{ current_status }}{% endif %}" aria-label="Previous">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-left"></i></span></li>
+                {% endif %}
+
+                {% for num in paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active" aria-current="page"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}{% if current_status != 'all' %}&status={{ current_status }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if current_status != 'all' %}&status={{ current_status }}{% endif %}" aria-label="Next">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link"><i class="bi bi-chevron-right"></i></span></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

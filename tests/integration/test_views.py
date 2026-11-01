@@ -6,6 +6,14 @@ from apps.orders.models import Order, OrderItem
 
 
 @pytest.mark.django_db
+def test_dashboard_get_view(client):
+    response = client.get(reverse('orders:dashboard'))
+    assert response.status_code == 200
+    assert 'Warehouse Operations Console' in response.content.decode()
+    assert 'Master Catalog SKUs' in response.content.decode()
+
+
+@pytest.mark.django_db
 def test_simulator_get_view(client):
     response = client.get(reverse('orders:simulator'))
     assert response.status_code == 200
@@ -90,6 +98,52 @@ def test_recommendation_view(client):
     assert response.status_code == 200
     assert "Mailer Box" in response.content.decode()
     assert "$1.20" in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_order_list_and_detail_views(client):
+    order = Order.objects.create(
+        order_number="ORD-DETAIL-TEST",
+        customer_reference="VIP-ACME-CORP",
+        status=Order.Status.DRAFT,
+    )
+    # Order list
+    resp_list = client.get(reverse('orders:order_list'))
+    assert resp_list.status_code == 200
+    assert "ORD-DETAIL-TEST" in resp_list.content.decode()
+    assert "VIP-ACME-CORP" in resp_list.content.decode()
+
+    # Order detail
+    resp_detail = client.get(reverse('orders:order_detail', kwargs={'order_number': order.order_number}))
+    assert resp_detail.status_code == 200
+    assert "ORD-DETAIL-TEST" in resp_detail.content.decode()
+    assert "VIP-ACME-CORP" in resp_detail.content.decode()
+
+
+@pytest.mark.django_db
+def test_recommendation_history_view(client):
+    box = Box.objects.create(
+        name="History Audit Box",
+        internal_length=Decimal("30.00"),
+        internal_width=Decimal("20.00"),
+        internal_height=Decimal("15.00"),
+        max_weight_capacity=Decimal("10.000"),
+        packaging_cost=Decimal("2.50"),
+    )
+    order = Order.objects.create(
+        order_number="ORD-HIST-001",
+        customer_reference="LOGS-AUDIT",
+        status=Order.Status.EVALUATED,
+        selected_box=box,
+        packaging_cost=Decimal("2.50"),
+    )
+    resp = client.get(reverse('orders:history_list'))
+    assert resp.status_code == 200
+    content = resp.content.decode()
+    assert "Recommendation History" in content
+    assert "ORD-HIST-001" in content
+    assert "History Audit Box" in content
+    assert "$2.50" in content
 
 
 @pytest.mark.django_db

@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}Packing Recommendation: {{ order.order_number }} | SmartPack{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col">
+        <div class="d-flex align-items-center gap-3">
+            <h2 class="h3 mb-0 fw-bold">Order #{{ order.order_number }}</h2>
+            {% if order.status == 'EVALUATED' %}
+                <span class="badge bg-success fs-6"><i class="bi bi-check-circle me-1"></i>Packaging Feasible</span>
+            {% else %}
+                <span class="badge bg-danger fs-6"><i class="bi bi-x-circle me-1"></i>Packaging Infeasible</span>
+            {% endif %}
+        </div>
+        <p class="text-muted small mb-0">Evaluated on {{ order.created_at|date:"M d, Y H:i:s" }} &bull; Compute Runtime: {{ packing_result.execution_time_ms }} ms</p>
+    </div>
+    <div class="col-auto d-flex gap-2">
+        <a href="{% url 'orders:simulator' %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> Evaluate Another Order
+        </a>
+        <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-printer me-1"></i> Print Manifest
+        </button>
+    </div>
+</div>
+
+{% if order.status == 'EVALUATED' and order.selected_box %}
+    <!-- FEASIBLE RESULT -->
+    <div class="row g-4 mb-4">
+        <!-- Spotlight Card: Winning Box -->
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-success h-100">
+                <div class="card-header bg-success-subtle text-success-emphasis py-3 d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="bi bi-award-fill me-1"></i> Recommended Lowest-Cost Box</span>
+                    <span class="badge bg-success">Optimal</span>
+                </div>
+                <div class="card-body">
+                    <h3 class="card-title fw-bold text-dark mb-1">{{ order.selected_box.name }}</h3>
+                    <div class="display-6 fw-bold text-success mb-3">
+                        ${{ order.packaging_cost }}
+                        <span class="fs-6 text-muted fw-normal">/ unit cost</span>
+                    </div>
+
+                    <div class="bg-light p-3 rounded mb-3 border">
+                        <div class="row g-2 small">
+                            <div class="col-6">
+                                <span class="text-muted d-block">Internal Dimensions:</span>
+                                <strong>{{ order.selected_box.internal_length }} × {{ order.selected_box.internal_width }} × {{ order.selected_box.internal_height }} cm</strong>
+                            </div>
+                            <div class="col-6">
+                                <span class="text-muted d-block">Max Weight Capacity:</span>
+                                <strong>{{ order.selected_box.max_weight_capacity }} kg</strong>
+                            </div>
+                            <div class="col-6 mt-2">
+                                <span class="text-muted d-block">Internal Usable Volume:</span>
+                                <strong>{{ order.selected_box.internal_volume|floatformat:1 }} cm³</strong>
+                            </div>
+                            <div class="col-6 mt-2">
+                                <span class="text-muted d-block">Total Packed Weight:</span>
+                                <strong>{{ order.total_weight }} kg</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Utilization Progress Bars -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="fw-semibold">Volume Utilization:</span>
+                            <span class="fw-bold text-primary">{{ packing_result.volume_utilization_pct }}%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ packing_result.volume_utilization_pct }}%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="fw-semibold">Weight Utilization:</span>
+                            <span class="fw-bold text-info">{{ packing_result.weight_utilization_pct }}%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: {{ packing_result.weight_utilization_pct }}%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual 3D / Isometric Packing Layout Canvas -->
+        <div class="col-lg-7">
+            <div class="card shadow-sm h-100">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-box me-2 text-primary"></i>3D Packing Orientation Visualizer</h6>
+                    <span class="badge bg-light text-dark border small">Isometric Projection</span>
+                </div>
+                <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                    <canvas id="packingCanvas" width="550" height="280" style="max-width: 100%; border-radius: 8px; background: #fafafa; border: 1px solid #f1f5f9;"></canvas>
+                    <div class="d-flex flex-wrap gap-2 justify-content-center mt-2 small text-muted">
+                        <span class="d-flex align-items-center gap-1"><span style="width: 12px; height: 12px; background: rgba(37, 99, 235, 0.4); display: inline-block; border: 1px solid #2563eb;"></span> Packed Items</span>
+                        <span class="d-flex align-items-center gap-1"><span style="width: 12px; height: 12px; border: 1px dashed #64748b; display: inline-block;"></span> Shipping Box Boundary</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Placed Items Manifest Table -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header py-3">
+            <h5 class="mb-0"><i class="bi bi-list-check me-2 text-primary"></i>Packing Placement Coordinates & Orientations</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-muted small text-uppercase">
+                        <tr>
+                            <th>Unit #</th>
+                            <th>SKU</th>
+                            <th>Product Name</th>
+                            <th>Coordinates (X, Y, Z)</th>
+                            <th>Oriented Placement (DX × DY × DZ)</th>
+                            <th>Orientation Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in packing_result.placed_items_manifest %}
+                            <tr>
+                                <td><span class="badge bg-light text-dark border">{{ forloop.counter }}</span></td>
+                                <td><span class="font-monospace text-primary fw-semibold">{{ item.sku }}</span></td>
+                                <td>{{ item.name }}</td>
+                                <td>
+                                    <span class="badge bg-secondary-subtle text-secondary-emphasis font-monospace">
+                                        ({{ item.x|floatformat:1 }}, {{ item.y|floatformat:1 }}, {{ item.z|floatformat:1 }}) cm
+                                    </span>
+                                </td>
+                                <td>
+                                    <strong>{{ item.dx|floatformat:1 }} × {{ item.dy|floatformat:1 }} × {{ item.dz|floatformat:1 }}</strong> <span class="text-muted small">cm</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success-subtle text-success">
+                                        <i class="bi bi-check2"></i> Positioned
+                                    </span>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-3 text-muted">No placement manifest records available.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+{% else %}
+    <!-- INFEASIBLE RESULT -->
+    <div class="card shadow-sm border-danger mb-4">
+        <div class="card-header bg-danger-subtle text-danger-emphasis py-3">
+            <h5 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Order Packing Infeasible</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="alert alert-danger mb-4">
+                <strong>Failure Reason:</strong>
+                <p class="mb-0 mt-1">{{ packing_result.failure_reason|default:"The order items exceed the maximum dimension or weight capacity of all active shipping boxes." }}</p>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card bg-light border p-3">
+                        <h6 class="fw-bold mb-2">Order Statistics</h6>
+                        <ul class="list-unstyled mb-0 small">
+                            <li>Total Order Items: <strong>{{ items.count }} distinct products</strong></li>
+                            <li>Total Order Weight: <strong>{{ order.total_weight }} kg</strong></li>
+                            <li>Total Item Volume: <strong>{{ order.total_volume|floatformat:1 }} cm³</strong></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-light border p-3">
+                        <h6 class="fw-bold mb-2 text-danger">Recommended Actions</h6>
+                        <ul class="mb-0 small ps-3">
+                            <li>Split this order into multiple shipments across two separate boxes.</li>
+                            <li>Introduce a larger box size or freight pallet to the packaging catalog.</li>
+                            <li>Verify if any product physical dimensions were entered incorrectly.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Candidate Box Comparison Matrix -->
+<div class="card shadow-sm">
+    <div class="card-header py-3">
+        <h5 class="mb-0"><i class="bi bi-table me-2 text-primary"></i>Candidate Box Evaluation Matrix</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-muted small text-uppercase">
+                    <tr>
+                        <th>Box Name</th>
+                        <th>Dimensions (L × W × H)</th>
+                        <th>Max Weight</th>
+                        <th>Packaging Cost</th>
+                        <th>Weight Capacity Feasible?</th>
+                        <th>Volumetric Feasible?</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in comparison_boxes %}
+                        <tr class="{% if row.is_selected %}table-success{% endif %}">
+                            <td class="fw-semibold">
+                                {{ row.box.name }}
+                                {% if row.is_selected %}
+                                    <span class="badge bg-success ms-1">Selected (Lowest Cost)</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ row.box.internal_length }} × {{ row.box.internal_width }} × {{ row.box.internal_height }} cm</td>
+                            <td>{{ row.box.max_weight_capacity }} kg</td>
+                            <td class="fw-bold">${{ row.cost }}</td>
+                            <td>
+                                {% if row.weight_feasible %}
+                                    <span class="badge bg-success-subtle text-success"><i class="bi bi-check"></i> Passes</span>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle text-danger"><i class="bi bi-x"></i> Exceeded</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if row.volume_feasible %}
+                                    <span class="badge bg-success-subtle text-success"><i class="bi bi-check"></i> Passes</span>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle text-danger"><i class="bi bi-x"></i> Exceeded</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if row.is_selected %}
+                                    <strong class="text-success">Recommended</strong>
+                                {% elif not row.weight_feasible or not row.volume_feasible %}
+                                    <span class="text-muted small">Disqualified</span>
+                                {% else %}
+                                    <span class="text-muted small">Higher Cost / Fit</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 3D Isometric Preview Renderer
+    const PLACED_ITEMS = {{ placed_items_json|safe }};
+    const BOX_SPECS = {
+        length: {% if order.selected_box %}{{ order.selected_box.internal_length }}{% else %}0{% endif %},
+        width: {% if order.selected_box %}{{ order.selected_box.internal_width }}{% else %}0{% endif %},
+        height: {% if order.selected_box %}{{ order.selected_box.internal_height }}{% else %}0{% endif %}
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const canvas = document.getElementById('packingCanvas');
+        if (!canvas || !BOX_SPECS.length) return;
+        const ctx = canvas.getContext('2d');
+
+        const width = canvas.width;
+        const height = canvas.height;
+        ctx.clearRect(0, 0, width, height);
+
+        // Isometric projection formulas:
+        // isoX = (x - y) * cos(30°)
+        // isoY = (x + y) * sin(30°) - z
+        const angle = Math.PI / 6; // 30 degrees
+        const cosA = Math.cos(angle);
+        const sinA = Math.sin(angle);
+
+        // Scale factor to fit inside canvas
+        const maxDim = Math.max(BOX_SPECS.length, BOX_SPECS.width, BOX_SPECS.height);
+        const scale = Math.min((width * 0.45) / (maxDim * cosA * 2), (height * 0.45) / maxDim);
+        const originX = width / 2;
+        const originY = height * 0.72;
+
+        function toIso(x, y, z) {
+            return {
+                x: originX + (x - y) * cosA * scale,
+                y: originY - ((x + y) * sinA * scale + z * scale)
+            };
+        }
+
+        function drawCuboid(x, y, z, dx, dy, dz, fillColor, strokeColor, isBox = false) {
+            const p0 = toIso(x, y, z);
+            const p1 = toIso(x + dx, y, z);
+            const p2 = toIso(x + dx, y + dy, z);
+            const p3 = toIso(x, y + dy, z);
+
+            const t0 = toIso(x, y, z + dz);
+            const t1 = toIso(x + dx, y, z + dz);
+            const t2 = toIso(x + dx, y + dy, z + dz);
+            const t3 = toIso(x, y + dy, z + dz);
+
+            ctx.lineWidth = isBox ? 1.5 : 1;
+            ctx.strokeStyle = strokeColor;
+
+            // Draw Top Face
+            ctx.fillStyle = fillColor;
+            ctx.beginPath();
+            ctx.moveTo(t0.x, t0.y);
+            ctx.lineTo(t1.x, t1.y);
+            ctx.lineTo(t2.x, t2.y);
+            ctx.lineTo(t3.x, t3.y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Draw Front-Right Face
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(t1.x, t1.y);
+            ctx.lineTo(t2.x, t2.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Draw Front-Left Face
+            ctx.beginPath();
+            ctx.moveTo(p3.x, p3.y);
+            ctx.lineTo(t3.x, t3.y);
+            ctx.lineTo(t2.x, t2.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        // Draw Outer Shipping Box Wireframe (transparent container)
+        drawCuboid(0, 0, 0, BOX_SPECS.length, BOX_SPECS.width, BOX_SPECS.height, 'rgba(240, 245, 255, 0.25)', '#64748b', true);
+
+        // Palette for distinct item visualization
+        const colors = [
+            'rgba(37, 99, 235, 0.65)',
+            'rgba(16, 185, 129, 0.65)',
+            'rgba(245, 158, 11, 0.65)',
+            'rgba(168, 85, 247, 0.65)',
+            'rgba(236, 72, 153, 0.65)',
+            'rgba(14, 165, 233, 0.65)',
+        ];
+
+        // Draw each placed item inside the box
+        PLACED_ITEMS.forEach((item, idx) => {
+            const color = colors[idx % colors.length];
+            drawCuboid(item.x, item.y, item.z, item.dx, item.dy, item.dz, color, '#1e293b');
+        });
+    });
+</script>
+{% endblock %}
+

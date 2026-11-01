@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}AI Box Selection Simulator | SmartPack{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col">
+        <h2 class="h3 mb-0 fw-bold"><i class="bi bi-cpu-fill text-primary me-2"></i>AI-Assisted Box Selection Simulator</h2>
+        <p class="text-muted small mb-0">Assemble order items and let the 3D rotational bin packing engine select the lowest-cost feasible box.</p>
+    </div>
+</div>
+
+<form method="post" id="orderSimulatorForm" novalidate>
+    {% csrf_token %}
+    {{ formset.management_form }}
+
+    <div class="row g-4">
+        <!-- Left Column: Item Selection & Configuration -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-cart-check me-2 text-primary"></i>Order Items</h5>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="add-item-btn">
+                        <i class="bi bi-plus-lg me-1"></i> Add Another Product
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0" id="order-items-table">
+                            <thead class="table-light text-muted small text-uppercase">
+                                <tr>
+                                    <th style="width: 45%;">Product SKU / Name</th>
+                                    <th style="width: 25%;">Specs Preview</th>
+                                    <th style="width: 20%;">Quantity</th>
+                                    <th style="width: 10%;" class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="items-container">
+                                {% for form in formset %}
+                                    <tr class="item-row" data-row-index="{{ forloop.counter0 }}">
+                                        {{ form.id }}
+                                        <td>
+                                            {{ form.product }}
+                                            {% if form.product.errors %}
+                                                <div class="text-danger small mt-1">{{ form.product.errors }}</div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="specs-preview text-muted small font-monospace">Select a product...</span>
+                                        </td>
+                                        <td>
+                                            {{ form.quantity }}
+                                            {% if form.quantity.errors %}
+                                                <div class="text-danger small mt-1">{{ form.quantity.errors }}</div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            {% if formset.can_delete %}
+                                                <span class="d-none">{{ form.DELETE }}</span>
+                                            {% endif %}
+                                            <button type="button" class="btn btn-outline-danger btn-sm remove-row-btn" title="Remove item">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Packing Parameters & Constraints Card -->
+            <div class="card shadow-sm">
+                <div class="card-header py-3">
+                    <h6 class="mb-0"><i class="bi bi-sliders me-2 text-primary"></i>Packing Constraints & Instructions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            {{ order_form.allow_upright_only }}
+                            <label class="form-check-label fw-semibold" for="{{ order_form.allow_upright_only.id_for_label }}">
+                                {{ order_form.allow_upright_only.label }}
+                            </label>
+                        </div>
+                        <div class="form-text text-muted small">
+                            {{ order_form.allow_upright_only.help_text }}
+                        </div>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label fw-semibold">Warehouse Packaging Notes / Order Reference</label>
+                        {{ order_form.notes }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Live Order Aggregates & Action -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-primary sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-calculator me-2"></i>Live Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush mb-4">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span class="text-muted"><i class="bi bi-boxes me-2"></i>Total Discrete Units:</span>
+                            <span class="fw-bold fs-6" id="summary-units-count">0</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span class="text-muted"><i class="bi bi-speedometer2 me-2"></i>Total Weight:</span>
+                            <span class="fw-bold fs-6" id="summary-total-weight">0.000 kg</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span class="text-muted"><i class="bi bi-bounding-box-circles me-2"></i>Total Item Volume:</span>
+                            <span class="fw-bold fs-6" id="summary-total-volume">0.0 cm³</span>
+                        </li>
+                    </ul>
+
+                    <div class="alert alert-light border small text-muted mb-4">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="bi bi-shield-check text-success fs-5"></i>
+                            <span class="fw-semibold text-dark">Algorithm Guarantee</span>
+                        </div>
+                        Evaluates all active warehouse boxes, supports full 3D orthogonal rotations, collision detection, and selects the lowest packaging cost.
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold fs-6 shadow-sm">
+                        <i class="bi bi-lightning-charge-fill me-1"></i> Calculate Lowest-Cost Box
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Injected catalog lookup data from Django backend
+    const PRODUCT_CATALOG = {{ product_data_json|safe }};
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const itemsContainer = document.getElementById('items-container');
+        const addItemBtn = document.getElementById('add-item-btn');
+        const totalFormsInput = document.getElementById('id_items-TOTAL_FORMS');
+
+        // Function to refresh specs badge & recalculate aggregates
+        function updateRowSpecs(row) {
+            const select = row.querySelector('.product-selector');
+            const preview = row.querySelector('.specs-preview');
+            const prodId = select ? select.value : null;
+
+            if (prodId && PRODUCT_CATALOG[prodId]) {
+                const p = PRODUCT_CATALOG[prodId];
+                preview.innerHTML = `<span class="badge bg-light text-dark border">${p.length}×${p.width}×${p.height} cm</span> <span class="badge bg-light text-secondary border">${p.weight} kg</span>`;
+            } else {
+                preview.innerHTML = `<span class="text-muted small">Select a product...</span>`;
+            }
+            recalculateSummary();
+        }
+
+        // Live calculation of aggregate order volume and weight
+        function recalculateSummary() {
+            let totalUnits = 0;
+            let totalWeight = 0;
+            let totalVolume = 0;
+
+            const rows = itemsContainer.querySelectorAll('.item-row');
+            rows.forEach(row => {
+                if (row.style.display === 'none') return;
+                const select = row.querySelector('.product-selector');
+                const qtyInput = row.querySelector('.item-quantity');
+                const prodId = select ? select.value : null;
+                const qty = parseInt(qtyInput ? qtyInput.value : 0) || 0;
+
+                if (prodId && PRODUCT_CATALOG[prodId] && qty > 0) {
+                    const p = PRODUCT_CATALOG[prodId];
+                    totalUnits += qty;
+                    totalWeight += (p.weight * qty);
+                    totalVolume += (p.length * p.width * p.height * qty);
+                }
+            });
+
+            document.getElementById('summary-units-count').textContent = totalUnits;
+            document.getElementById('summary-total-weight').textContent = totalWeight.toFixed(3) + ' kg';
+            document.getElementById('summary-total-volume').textContent = totalVolume.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1}) + ' cm³';
+        }
+
+        // Attach event listeners to rows
+        function attachRowListeners(row) {
+            const select = row.querySelector('.product-selector');
+            const qtyInput = row.querySelector('.item-quantity');
+            const removeBtn = row.querySelector('.remove-row-btn');
+
+            if (select) {
+                select.addEventListener('change', () => updateRowSpecs(row));
+            }
+            if (qtyInput) {
+                qtyInput.addEventListener('input', recalculateSummary);
+            }
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function () {
+                    const activeRows = itemsContainer.querySelectorAll('.item-row:not([style*="display: none"])');
+                    if (activeRows.length <= 1) {
+                        alert("An order must contain at least one item.");
+                        return;
+                    }
+                    const deleteCheckbox = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+                    if (deleteCheckbox) {
+                        deleteCheckbox.checked = true;
+                        row.style.display = 'none';
+                    } else {
+                        row.remove();
+                    }
+                    recalculateSummary();
+                });
+            }
+            updateRowSpecs(row);
+        }
+
+        // Initialize existing rows
+        itemsContainer.querySelectorAll('.item-row').forEach(attachRowListeners);
+
+        // Add New Item Row
+        if (addItemBtn && totalFormsInput) {
+            addItemBtn.addEventListener('click', function () {
+                const currentForms = parseInt(totalFormsInput.value);
+                const firstRow = itemsContainer.querySelector('.item-row');
+                if (!firstRow) return;
+
+                const newRow = firstRow.cloneNode(true);
+                newRow.style.display = '';
+
+                // Update input names and IDs for Django Formset indexing
+                newRow.innerHTML = newRow.innerHTML.replaceAll(/items-\d+-/g, `items-${currentForms}-`);
+                newRow.setAttribute('data-row-index', currentForms);
+
+                // Reset inputs
+                const select = newRow.querySelector('.product-selector');
+                const qtyInput = newRow.querySelector('.item-quantity');
+                const idInput = newRow.querySelector('input[name$="-id"]');
+                const deleteInput = newRow.querySelector('input[type="checkbox"][name$="-DELETE"]');
+
+                if (select) select.selectedIndex = 0;
+                if (qtyInput) qtyInput.value = 1;
+                if (idInput) idInput.value = '';
+                if (deleteInput) deleteInput.checked = false;
+
+                itemsContainer.appendChild(newRow);
+                totalFormsInput.value = currentForms + 1;
+
+                attachRowListeners(newRow);
+            });
+        }
+
+        recalculateSummary();
+    });
+</script>
+{% endblock %}
+

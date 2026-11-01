@@ -1,0 +1,30 @@
+/* SmartPack Custom Styling */
+:root {
+    --warehouse-dark: #0f172a;
+    --warehouse-primary: #1e40af;
+    --warehouse-accent: #3b82f6;
+    --warehouse-surface: #ffffff;
+    --warehouse-border: #e2e8f0;
+}
+
+body {
+    background-color: #f8fafc;
+    color: #1e293b;
+    font-size: 0.95rem;
+}
+
+.table th {
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+}
+
+.card {
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.font-monospace {
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+}
+

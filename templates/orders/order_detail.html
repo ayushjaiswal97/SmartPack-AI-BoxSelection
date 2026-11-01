@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Order Details #{{ order.order_number }} | SmartPack{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col">
+        <h2 class="h4 mb-0 fw-bold">Order Details: #{{ order.order_number }}</h2>
+        <p class="text-muted small mb-0">Created on {{ order.created_at|date:"M d, Y H:i" }}</p>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'orders:recommendation' order.order_number %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-box me-1"></i> View Box Recommendation
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header py-3">
+        <h5 class="mb-0">Order Items</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-muted small text-uppercase">
+                    <tr>
+                        <th>Product SKU</th>
+                        <th>Name</th>
+                        <th>Snapshotted Dimensions (L × W × H)</th>
+                        <th>Snapshotted Weight</th>
+                        <th>Quantity</th>
+                        <th>Subtotal Weight</th>
+                        <th>Subtotal Volume</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order.items.all %}
+                        <tr>
+                            <td><span class="badge bg-secondary-subtle text-secondary font-monospace">{{ item.product.sku }}</span></td>
+                            <td class="fw-semibold">{{ item.product.name }}</td>
+                            <td>{{ item.unit_length_snapshot }} × {{ item.unit_width_snapshot }} × {{ item.unit_height_snapshot }} cm</td>
+                            <td>{{ item.unit_weight_snapshot }} kg</td>
+                            <td><span class="badge bg-primary fs-6">{{ item.quantity }}</span></td>
+                            <td>{{ item.total_weight }} kg</td>
+                            <td>{{ item.total_volume|floatformat:1 }} cm³</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

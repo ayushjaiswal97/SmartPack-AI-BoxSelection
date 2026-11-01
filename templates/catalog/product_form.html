@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form.instance.pk %}Edit Product{% else %}Add Product{% endif %} | SmartPack{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header py-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-tag-fill text-primary me-2"></i>
+                    {% if form.instance.pk %}Edit Product: {{ form.instance.sku }}{% else %}Add New Product{% endif %}
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">SKU Identifier <span class="text-danger">*</span></label>
+                            {{ form.sku }}
+                            {% if form.sku.errors %}<div class="text-danger small mt-1">{{ form.sku.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Product Name <span class="text-danger">*</span></label>
+                            {{ form.name }}
+                            {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <h6 class="text-muted text-uppercase small fw-bold mt-4 mb-3 border-bottom pb-2">Physical Dimensions & Weight</h6>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Length (cm) <span class="text-danger">*</span></label>
+                            {{ form.length }}
+                            {% if form.length.errors %}<div class="text-danger small mt-1">{{ form.length.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Width (cm) <span class="text-danger">*</span></label>
+                            {{ form.width }}
+                            {% if form.width.errors %}<div class="text-danger small mt-1">{{ form.width.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Height (cm) <span class="text-danger">*</span></label>
+                            {{ form.height }}
+                            {% if form.height.errors %}<div class="text-danger small mt-1">{{ form.height.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Weight (kg) <span class="text-danger">*</span></label>
+                            {{ form.weight }}
+                            {% if form.weight.errors %}<div class="text-danger small mt-1">{{ form.weight.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-check form-switch mb-4">
+                        {{ form.is_active }}
+                        <label class="form-check-label fw-semibold" for="{{ form.is_active.id_for_label }}">Active for Order Packing</label>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'catalog:product_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-save me-1"></i> Save Product
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

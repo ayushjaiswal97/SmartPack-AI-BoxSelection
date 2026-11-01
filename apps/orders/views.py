@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import DetailView, ListView, View
-from apps.catalog.models import Product, ShippingBox
+from apps.catalog.models import Box, Product
 from .forms import OrderForm, OrderItemFormSet
 from .models import Order, OrderItem
 from .services import evaluate_and_pack_order
@@ -20,7 +20,7 @@ class OrderSimulatorView(View):
     def get(self, request, *args, **kwargs):
         order_form = OrderForm()
         formset = OrderItemFormSet(queryset=OrderItem.objects.none())
-        products = Product.objects.filter(is_active=True).order_by('name')
+        products = Product.objects.all().order_by('name')
 
         # Serialize product catalog for frontend instant dimension preview
         product_data = {
@@ -49,7 +49,7 @@ class OrderSimulatorView(View):
     def post(self, request, *args, **kwargs):
         order_form = OrderForm(request.POST)
         formset = OrderItemFormSet(request.POST)
-        products = Product.objects.filter(is_active=True).order_by('name')
+        products = Product.objects.all().order_by('name')
 
         if order_form.is_valid() and formset.is_valid():
             cleaned_items = [
@@ -65,8 +65,8 @@ class OrderSimulatorView(View):
                 with transaction.atomic():
                     order = Order.objects.create(
                         order_number=Order.generate_order_number(),
+                        customer_reference=request.POST.get('customer_reference', ''),
                         notes=order_form.cleaned_data.get('notes', ''),
-                        created_by=request.user if request.user.is_authenticated else None,
                     )
 
                     for item_data in cleaned_items:
@@ -81,7 +81,7 @@ class OrderSimulatorView(View):
                     allow_upright = order_form.cleaned_data.get('allow_upright_only', False)
                     order, result, logs = evaluate_and_pack_order(order, allow_upright_only=allow_upright)
 
-                if order.status == Order.STATUS_EVALUATED:
+                if order.status == Order.Status.EVALUATED:
                     messages.success(
                         request,
                         f"Optimal box selected: '{order.selected_box.name}' at ${order.packaging_cost}."
@@ -140,7 +140,7 @@ class OrderRecommendationView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         order = self.object
-        boxes = ShippingBox.objects.filter(is_active=True).order_by('packaging_cost', 'name')
+        boxes = Box.objects.filter(is_active=True).order_by('packaging_cost', 'name')
         
         # Calculate comparison matrix for all active boxes
         comparison = []

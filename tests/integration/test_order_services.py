@@ -1,6 +1,6 @@
 from decimal import Decimal
 import pytest
-from apps.catalog.models import Product, ShippingBox
+from apps.catalog.models import Box, Product
 from apps.orders.models import Order, OrderItem
 from apps.orders.services import evaluate_and_pack_order
 
@@ -8,7 +8,7 @@ from apps.orders.services import evaluate_and_pack_order
 @pytest.mark.django_db
 def test_order_evaluation_and_box_recommendation():
     # Setup candidate boxes
-    small_box = ShippingBox.objects.create(
+    small_box = Box.objects.create(
         name="Small Box",
         internal_length=Decimal("20.00"),
         internal_width=Decimal("15.00"),
@@ -16,7 +16,7 @@ def test_order_evaluation_and_box_recommendation():
         max_weight_capacity=Decimal("3.000"),
         packaging_cost=Decimal("1.50"),
     )
-    large_box = ShippingBox.objects.create(
+    large_box = Box.objects.create(
         name="Large Box",
         internal_length=Decimal("50.00"),
         internal_width=Decimal("40.00"),
@@ -42,7 +42,7 @@ def test_order_evaluation_and_box_recommendation():
     # Evaluate
     updated_order, result, _ = evaluate_and_pack_order(order)
 
-    assert updated_order.status == Order.STATUS_EVALUATED
+    assert updated_order.status == Order.Status.EVALUATED
     assert updated_order.selected_box == small_box
     assert updated_order.packaging_cost == Decimal("1.50")
     assert result.is_feasible is True
@@ -52,7 +52,7 @@ def test_order_evaluation_and_box_recommendation():
 
 @pytest.mark.django_db
 def test_order_evaluation_infeasible_oversized():
-    ShippingBox.objects.create(
+    Box.objects.create(
         name="Small Box",
         internal_length=Decimal("20.00"),
         internal_width=Decimal("15.00"),
@@ -74,10 +74,10 @@ def test_order_evaluation_infeasible_oversized():
 
     updated_order, result, _ = evaluate_and_pack_order(order)
 
-    assert updated_order.status == Order.STATUS_FAILED
+    assert updated_order.status == Order.Status.FAILED
     assert updated_order.selected_box is None
     assert result.is_feasible is False
-    assert "cannot fit inside box" in result.failure_reason
+    assert "exceed box" in result.failure_reason or "clearance" in result.failure_reason
 
 
 @pytest.mark.django_db

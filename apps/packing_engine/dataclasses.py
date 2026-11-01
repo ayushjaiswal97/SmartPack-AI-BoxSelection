@@ -34,6 +34,7 @@ class BoxDTO:
     height: Decimal
     max_weight: Decimal
     packaging_cost: Decimal
+    is_active: bool = True
 
     @property
     def volume(self) -> Decimal:
@@ -84,3 +85,20 @@ class PackingResultDTO:
     execution_time_ms: int = 0
     failure_reason: str = ""
 
+
+@dataclass
+class BoxEvaluationSummary:
+    """Structured audit record of evaluating an order against a candidate box."""
+    box_id: int
+    box_name: str
+    packaging_cost: Decimal
+    is_active: bool
+    is_feasible: bool
+    rejection_reason: str = ""
+    weight_feasible: bool = True
+    volume_feasible: bool = True
+    dimensional_feasible: bool = True
+    spatial_feasible: bool = True
+    volume_utilization_pct: Decimal = Decimal("0.00")
+    weight_utilization_pct: Decimal = Decimal("0.00")
+    packing_result: Optional[PackingResultDTO] = None

@@ -5,8 +5,22 @@ from .models import Order, OrderItem, PackingResult
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-    fields = ('product', 'quantity', 'unit_length_snapshot', 'unit_width_snapshot', 'unit_height_snapshot', 'unit_weight_snapshot')
-    readonly_fields = ('unit_length_snapshot', 'unit_width_snapshot', 'unit_height_snapshot', 'unit_weight_snapshot')
+    fields = (
+        'product',
+        'quantity',
+        'unit_length_snapshot',
+        'unit_width_snapshot',
+        'unit_height_snapshot',
+        'unit_weight_snapshot',
+        'created_at',
+    )
+    readonly_fields = (
+        'unit_length_snapshot',
+        'unit_width_snapshot',
+        'unit_height_snapshot',
+        'unit_weight_snapshot',
+        'created_at',
+    )
 
 
 class PackingResultInline(admin.StackedInline):
@@ -26,6 +40,7 @@ class PackingResultInline(admin.StackedInline):
 class OrderAdmin(admin.ModelAdmin):
     list_display = (
         'order_number',
+        'customer_reference',
         'status',
         'selected_box',
         'total_weight',
@@ -34,7 +49,7 @@ class OrderAdmin(admin.ModelAdmin):
         'created_at',
     )
     list_filter = ('status', 'selected_box', 'created_at')
-    search_fields = ('order_number', 'notes')
+    search_fields = ('order_number', 'customer_reference', 'notes')
     inlines = [OrderItemInline, PackingResultInline]
 
 

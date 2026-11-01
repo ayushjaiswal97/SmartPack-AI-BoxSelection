@@ -1,6 +1,6 @@
 from decimal import Decimal
 from django.core.management.base import BaseCommand
-from apps.catalog.models import Product, ShippingBox
+from apps.catalog.models import Box, Product
 
 
 class Command(BaseCommand):
@@ -62,7 +62,7 @@ class Command(BaseCommand):
         ]
 
         for box_data in boxes:
-            box, created = ShippingBox.objects.update_or_create(
+            box, created = Box.objects.update_or_create(
                 name=box_data["name"],
                 defaults=box_data,
             )

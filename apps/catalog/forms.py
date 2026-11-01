@@ -1,12 +1,11 @@
-# apps/catalog/forms.py
 from django import forms
-from .models import Product, ShippingBox
+from .models import Box, Product
 
 
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['sku', 'name', 'length', 'width', 'height', 'weight', 'is_active']
+        fields = ['sku', 'name', 'length', 'width', 'height', 'weight']
         widgets = {
             'sku': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. ELEC-PHN-01'}),
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Smartphone Pro'}),
@@ -14,13 +13,12 @@ class ProductForm(forms.ModelForm):
             'width': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0.01'}),
             'height': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0.01'}),
             'weight': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.001', 'min': '0.001'}),
-            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
 
-class ShippingBoxForm(forms.ModelForm):
+class BoxForm(forms.ModelForm):
     class Meta:
-        model = ShippingBox
+        model = Box
         fields = [
             'name',
             'internal_length',
@@ -40,3 +38,6 @@ class ShippingBoxForm(forms.ModelForm):
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
+
+# Backward-compatible alias
+ShippingBoxForm = BoxForm

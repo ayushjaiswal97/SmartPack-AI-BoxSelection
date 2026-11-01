@@ -1,6 +1,6 @@
 from decimal import Decimal
 import pytest
-from apps.catalog.models import Product, ShippingBox
+from apps.catalog.models import Box, Product
 from apps.orders.models import Order, OrderItem
 from apps.orders.services import evaluate_and_pack_order
 
@@ -8,7 +8,7 @@ from apps.orders.services import evaluate_and_pack_order
 @pytest.mark.django_db
 def test_edge_case_empty_box_catalog():
     """When no active boxes exist, system must return a clean, actionable error."""
-    ShippingBox.objects.all().delete()
+    Box.objects.all().delete()
     prod = Product.objects.create(
         sku="ITEM-01",
         name="Small Item",
@@ -21,14 +21,14 @@ def test_edge_case_empty_box_catalog():
     OrderItem.objects.create(order=order, product=prod, quantity=1)
 
     order, result, _ = evaluate_and_pack_order(order)
-    assert order.status == Order.STATUS_FAILED
+    assert order.status == Order.Status.FAILED
     assert "No active shipping boxes" in result.failure_reason
 
 
 @pytest.mark.django_db
 def test_edge_case_dense_overweight_order():
     """Dense small products (like dumbbells) that fit volumetrically but exceed weight capacity."""
-    ShippingBox.objects.create(
+    Box.objects.create(
         name="Standard Box",
         internal_length=Decimal("50.00"),
         internal_width=Decimal("50.00"),
@@ -49,14 +49,14 @@ def test_edge_case_dense_overweight_order():
     OrderItem.objects.create(order=order, product=dumbbell, quantity=2)
 
     order, result, _ = evaluate_and_pack_order(order)
-    assert order.status == Order.STATUS_FAILED
+    assert order.status == Order.Status.FAILED
     assert "exceeds box maximum capacity" in result.failure_reason
 
 
 @pytest.mark.django_db
 def test_edge_case_multiple_quantities_stacking():
     """Testing an order with multiple quantities of products."""
-    box = ShippingBox.objects.create(
+    box = Box.objects.create(
         name="Medium Box",
         internal_length=Decimal("40.00"),
         internal_width=Decimal("30.00"),
@@ -86,7 +86,6 @@ def test_edge_case_multiple_quantities_stacking():
     OrderItem.objects.create(order=order, product=book, quantity=3)
 
     order, result, _ = evaluate_and_pack_order(order)
-    assert order.status == Order.STATUS_EVALUATED
+    assert order.status == Order.Status.EVALUATED
     assert order.selected_box == box
     assert len(result.placed_items_manifest) == 8  # 5 phones + 3 books
-

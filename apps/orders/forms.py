@@ -15,13 +15,19 @@ class OrderForm(forms.ModelForm):
 
     class Meta:
         model = Order
-        fields = ['notes']
+        fields = ['customer_reference', 'notes']
         widgets = {
+            'customer_reference': forms.TextInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Customer name or reference ID (e.g. CUST-8831)...',
+                }
+            ),
             'notes': forms.Textarea(
                 attrs={
                     'class': 'form-control',
                     'rows': 2,
-                    'placeholder': 'Optional internal warehouse packaging instructions or order reference...',
+                    'placeholder': 'Optional internal warehouse packaging instructions...',
                 }
             ),
         }
@@ -29,7 +35,7 @@ class OrderForm(forms.ModelForm):
 
 class OrderItemForm(forms.ModelForm):
     product = forms.ModelChoiceField(
-        queryset=Product.objects.filter(is_active=True).order_by('name'),
+        queryset=Product.objects.all().order_by('name'),
         widget=forms.Select(attrs={'class': 'form-select product-selector'}),
         empty_label="-- Select Product SKU --",
     )
@@ -53,4 +59,3 @@ OrderItemFormSet = inlineformset_factory(
     min_num=1,
     validate_min=True,
 )
-

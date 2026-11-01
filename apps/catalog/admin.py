@@ -1,17 +1,16 @@
 from django.contrib import admin
-from .models import Product, ShippingBox
+from .models import Box, Product
 
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('sku', 'name', 'length', 'width', 'height', 'weight', 'is_active', 'updated_at')
-    list_filter = ('is_active',)
+    list_display = ('sku', 'name', 'length', 'width', 'height', 'weight', 'created_at', 'updated_at')
     search_fields = ('sku', 'name')
     ordering = ('sku',)
 
 
-@admin.register(ShippingBox)
-class ShippingBoxAdmin(admin.ModelAdmin):
+@admin.register(Box)
+class BoxAdmin(admin.ModelAdmin):
     list_display = (
         'name',
         'internal_length',
@@ -20,6 +19,7 @@ class ShippingBoxAdmin(admin.ModelAdmin):
         'max_weight_capacity',
         'packaging_cost',
         'is_active',
+        'created_at',
         'updated_at',
     )
     list_filter = ('is_active',)

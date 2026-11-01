@@ -2,8 +2,8 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView
-from .forms import ProductForm, ShippingBoxForm
-from .models import Product, ShippingBox
+from .forms import BoxForm, ProductForm
+from .models import Box, Product
 
 
 class ProductListView(ListView):
@@ -36,14 +36,14 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
 
 
 class ShippingBoxListView(ListView):
-    model = ShippingBox
+    model = Box
     template_name = 'catalog/box_list.html'
     context_object_name = 'boxes'
 
 
 class ShippingBoxCreateView(LoginRequiredMixin, CreateView):
-    model = ShippingBox
-    form_class = ShippingBoxForm
+    model = Box
+    form_class = BoxForm
     template_name = 'catalog/box_form.html'
     success_url = reverse_lazy('catalog:box_list')
 
@@ -53,11 +53,17 @@ class ShippingBoxCreateView(LoginRequiredMixin, CreateView):
 
 
 class ShippingBoxUpdateView(LoginRequiredMixin, UpdateView):
-    model = ShippingBox
-    form_class = ShippingBoxForm
+    model = Box
+    form_class = BoxForm
     template_name = 'catalog/box_form.html'
     success_url = reverse_lazy('catalog:box_list')
 
     def form_valid(self, form):
         messages.success(self.request, f"Shipping Box '{form.instance.name}' updated successfully.")
         return super().form_valid(form)
+
+
+# Aliases
+BoxListView = ShippingBoxListView
+BoxCreateView = ShippingBoxCreateView
+BoxUpdateView = ShippingBoxUpdateView

@@ -4,116 +4,185 @@ from django.db import models
 
 
 class Product(models.Model):
+    """
+    Represents a discrete catalog item with physical bounding specifications.
+    
+    Dimensions are measured in centimeters (cm) and weight in kilograms (kg).
+    """
     sku = models.CharField(
         max_length=64,
         unique=True,
         db_index=True,
-        help_text="Unique Stock Keeping Unit identifier.",
+        help_text="Unique Stock Keeping Unit identifier (e.g. ELEC-PHN-01).",
     )
     name = models.CharField(
         max_length=255,
-        help_text="Product display name.",
+        help_text="Product commercial name.",
     )
     length = models.DecimalField(
         max_digits=8,
         decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'), message="Length must be greater than 0.")],
-        help_text="Length in centimeters (cm).",
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text="Length along the X-axis in centimeters (cm). Must be > 0.",
     )
     width = models.DecimalField(
         max_digits=8,
         decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'), message="Width must be greater than 0.")],
-        help_text="Width in centimeters (cm).",
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text="Width along the Y-axis in centimeters (cm). Must be > 0.",
     )
     height = models.DecimalField(
         max_digits=8,
         decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'), message="Height must be greater than 0.")],
-        help_text="Height in centimeters (cm).",
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text="Height along the Z-axis in centimeters (cm). Must be > 0.",
     )
     weight = models.DecimalField(
         max_digits=8,
         decimal_places=3,
-        validators=[MinValueValidator(Decimal('0.001'), message="Weight must be greater than 0.")],
-        help_text="Weight in kilograms (kg).",
+        validators=[MinValueValidator(Decimal('0.001'))],
+        help_text="Physical unit weight in kilograms (kg). Must be > 0.",
     )
-    is_active = models.BooleanField(
-        default=True,
-        help_text="Whether this product is currently active for ordering.",
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Timestamp when the product was registered.",
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="Timestamp when the product details were last updated.",
+    )
 
     class Meta:
-        ordering = ['sku']
-        verbose_name = 'Product'
-        verbose_name_plural = 'Products'
+        ordering = ["sku"]
+        verbose_name = "Product"
+        verbose_name_plural = "Products"
+        indexes = [
+            models.Index(fields=["sku"], name="idx_product_sku"),
+            models.Index(fields=["name"], name="idx_product_name"),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(length__gt=Decimal('0.00')),
+                name="chk_product_length_positive",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(width__gt=Decimal('0.00')),
+                name="chk_product_width_positive",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(height__gt=Decimal('0.00')),
+                name="chk_product_height_positive",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(weight__gt=Decimal('0.000')),
+                name="chk_product_weight_positive",
+            ),
+        ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.sku} - {self.name} ({self.length}x{self.width}x{self.height} cm, {self.weight} kg)"
 
     @property
     def volume(self) -> Decimal:
-        """Returns product volume in cubic centimeters (cm³)."""
+        """Returns bounding volume in cubic centimeters (cm³)."""
         return self.length * self.width * self.height
 
 
-class ShippingBox(models.Model):
+class Box(models.Model):
+    """
+    Represents a standardized shipping container used in the warehouse.
+    
+    All dimensions denote internal usable clearance in centimeters (cm).
+    """
     name = models.CharField(
         max_length=100,
         unique=True,
-        help_text="Box name/code (e.g. Small Box, Medium Standard, Large Heavy).",
+        help_text="Descriptive shipping container code (e.g. Standard Medium Box, BX-MD).",
     )
     internal_length = models.DecimalField(
         max_digits=8,
         decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'), message="Internal length must be greater than 0.")],
-        help_text="Internal length in centimeters (cm).",
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text="Internal clearance length in centimeters (cm). Must be > 0.",
     )
     internal_width = models.DecimalField(
         max_digits=8,
         decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'), message="Internal width must be greater than 0.")],
-        help_text="Internal width in centimeters (cm).",
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text="Internal clearance width in centimeters (cm). Must be > 0.",
     )
     internal_height = models.DecimalField(
         max_digits=8,
         decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'), message="Internal height must be greater than 0.")],
-        help_text="Internal height in centimeters (cm).",
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text="Internal clearance height in centimeters (cm). Must be > 0.",
     )
     max_weight_capacity = models.DecimalField(
         max_digits=8,
         decimal_places=3,
-        validators=[MinValueValidator(Decimal('0.001'), message="Max weight capacity must be greater than 0.")],
-        help_text="Maximum weight capacity in kilograms (kg).",
+        validators=[MinValueValidator(Decimal('0.001'))],
+        help_text="Maximum gross payload capacity in kilograms (kg). Must be > 0.",
     )
     packaging_cost = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.00'), message="Packaging cost cannot be negative.")],
-        help_text="Packaging cost in currency units (e.g. $).",
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Procurement or unit cost of the packaging material ($). Must be >= 0.",
     )
     is_active = models.BooleanField(
         default=True,
-        help_text="Whether this box is available for packing recommendations.",
+        db_index=True,
+        help_text="Controls whether this box is considered during packing optimization.",
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Timestamp when the box specification was added.",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="Timestamp when the box specification was last modified.",
+    )
 
     class Meta:
-        ordering = ['packaging_cost', 'name']
-        verbose_name = 'Shipping Box'
-        verbose_name_plural = 'Shipping Boxes'
+        ordering = ["packaging_cost", "name"]
+        verbose_name = "Shipping Box"
+        verbose_name_plural = "Shipping Boxes"
+        indexes = [
+            models.Index(
+                fields=["is_active", "packaging_cost"],
+                name="idx_box_active_cost",
+            ),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(internal_length__gt=Decimal('0.00')),
+                name="chk_box_length_positive",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(internal_width__gt=Decimal('0.00')),
+                name="chk_box_width_positive",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(internal_height__gt=Decimal('0.00')),
+                name="chk_box_height_positive",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(max_weight_capacity__gt=Decimal('0.000')),
+                name="chk_box_max_weight_positive",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(packaging_cost__gte=Decimal('0.00')),
+                name="chk_box_cost_non_negative",
+            ),
+        ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"{self.name} ({self.internal_length}x{self.internal_width}x{self.internal_height} cm, "
-            f"Max {self.max_weight_capacity} kg, Cost ${self.packaging_cost})"
+            f"Cap: {self.max_weight_capacity} kg, Cost: ${self.packaging_cost})"
         )
 
     @property
     def internal_volume(self) -> Decimal:
-        """Returns internal usable box volume in cubic centimeters (cm³)."""
+        """Returns usable volume in cubic centimeters (cm³)."""
         return self.internal_length * self.internal_width * self.internal_height

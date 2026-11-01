@@ -1,8 +1,7 @@
 from decimal import Decimal
 import pytest
-from django.contrib.auth.models import User
 from django.urls import reverse
-from apps.catalog.models import Product, ShippingBox
+from apps.catalog.models import Box, Product
 from apps.orders.models import Order, OrderItem
 
 
@@ -16,7 +15,7 @@ def test_simulator_get_view(client):
 @pytest.mark.django_db
 def test_simulator_post_successful_evaluation(client):
     # Setup catalog
-    box = ShippingBox.objects.create(
+    box = Box.objects.create(
         name="Standard Box",
         internal_length=Decimal("30.00"),
         internal_width=Decimal("20.00"),
@@ -51,7 +50,7 @@ def test_simulator_post_successful_evaluation(client):
     # Check database state
     order = Order.objects.first()
     assert order is not None
-    assert order.status == Order.STATUS_EVALUATED
+    assert order.status == Order.Status.EVALUATED
     assert order.selected_box == box
     assert order.packaging_cost == Decimal("2.00")
 
@@ -73,7 +72,7 @@ def test_simulator_post_no_items_validation_error(client):
 
 @pytest.mark.django_db
 def test_recommendation_view(client):
-    box = ShippingBox.objects.create(
+    box = Box.objects.create(
         name="Mailer Box",
         internal_length=Decimal("20.00"),
         internal_width=Decimal("15.00"),
@@ -83,7 +82,7 @@ def test_recommendation_view(client):
     )
     order = Order.objects.create(
         order_number="ORD-REC-TEST",
-        status=Order.STATUS_EVALUATED,
+        status=Order.Status.EVALUATED,
         selected_box=box,
         packaging_cost=Decimal("1.20"),
     )
@@ -112,4 +111,3 @@ def test_catalog_create_requires_login(client):
     response = client.get(reverse('catalog:box_create'))
     assert response.status_code == 302
     assert '/accounts/login/' in response.url
-

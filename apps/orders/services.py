@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import List, Tuple
 from django.db import transaction
-from apps.catalog.models import ShippingBox
+from apps.catalog.models import Box
 from apps.orders.models import Order, OrderItem, PackingResult
 from apps.packing_engine.dataclasses import BoxDTO, ItemDTO
 from apps.packing_engine.selector import BoxSelectorService
@@ -37,7 +37,7 @@ def build_item_dtos_from_order(order: Order) -> List[ItemDTO]:
 
 def build_box_dtos(active_only: bool = True) -> List[BoxDTO]:
     """Fetches candidate shipping boxes from the database and converts to BoxDTOs."""
-    qs = ShippingBox.objects.all()
+    qs = Box.objects.all()
     if active_only:
         qs = qs.filter(is_active=True)
 
@@ -79,14 +79,14 @@ def evaluate_and_pack_order(
     packing_result_dto, audit_log = selector.select_best_box(items, boxes)
 
     if packing_result_dto.is_feasible and packing_result_dto.box:
-        box_model = ShippingBox.objects.get(id=packing_result_dto.box.box_id)
+        box_model = Box.objects.get(id=packing_result_dto.box.box_id)
         order.selected_box = box_model
         order.packaging_cost = box_model.packaging_cost
-        order.status = Order.STATUS_EVALUATED
+        order.status = Order.Status.EVALUATED
     else:
         order.selected_box = None
         order.packaging_cost = None
-        order.status = Order.STATUS_FAILED
+        order.status = Order.Status.FAILED
 
     order.save()
 
@@ -104,4 +104,3 @@ def evaluate_and_pack_order(
     )
 
     return order, packing_result, audit_log
-

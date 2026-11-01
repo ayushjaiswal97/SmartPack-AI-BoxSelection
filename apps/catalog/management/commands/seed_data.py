@@ -247,7 +247,7 @@ class Command(BaseCommand):
             status = res.get("selection_status", "UNKNOWN")
             selected_box_name = res.get("selected_box", {}).get("name") if res.get("selected_box") else "None"
             cost = res.get("packaging_cost")
-            cost_str = f"${cost:.2f}" if cost is not None else "N/A"
+            cost_str = f"₹{cost:.2f}" if cost is not None else "N/A"
 
             self.stdout.write(
                 f"  {action} Order: #{order.order_number} -> Box: {selected_box_name} ({cost_str}) [{status}]"

@@ -140,7 +140,7 @@ class OrderSimulatorView(View):
                 if order.status == Order.Status.EVALUATED:
                     messages.success(
                         request,
-                        f"Optimal box selected: '{order.selected_box.name}' at ${order.packaging_cost}."
+                        f"Optimal box selected: '{order.selected_box.name}' at ₹{order.packaging_cost}."
                     )
                 else:
                     messages.warning(

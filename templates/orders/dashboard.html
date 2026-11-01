@@ -148,7 +148,7 @@
                                     <td>
                                         {% if order.selected_box %}
                                             <span class="fw-semibold text-dark">{{ order.selected_box.name }}</span>
-                                            <span class="badge bg-light text-success border ms-1 font-mono">${{ order.packaging_cost }}</span>
+                                            <span class="badge bg-light text-success border ms-1 font-mono">₹{{ order.packaging_cost }}</span>
                                         {% else %}
                                             <span class="text-muted small fst-italic">None (Infeasible)</span>
                                         {% endif %}
@@ -244,7 +244,7 @@
                                     {{ box.internal_length }}×{{ box.internal_width }}×{{ box.internal_height }} cm &bull; Max {{ box.max_weight_capacity }} kg
                                 </span>
                             </div>
-                            <span class="badge bg-light text-success border font-mono fs-7">${{ box.packaging_cost }}</span>
+                            <span class="badge bg-light text-success border font-mono fs-7">₹{{ box.packaging_cost }}</span>
                         </li>
                     {% empty %}
                         <li class="list-group-item text-center text-muted py-3">No active shipping boxes found.</li>

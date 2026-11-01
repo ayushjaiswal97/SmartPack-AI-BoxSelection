@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('apiStatusBadge').className = 'badge bg-success-subtle text-success fs-6 fw-bold';
             document.getElementById('apiStatusBadge').innerHTML = '<i class="bi bi-award-fill me-1"></i> Recommended Lowest-Cost Box';
             document.getElementById('apiBoxName').textContent = data.selected_box.name;
-            document.getElementById('apiPackagingCost').textContent = '$' + data.packaging_cost.toFixed(2);
+            document.getElementById('apiPackagingCost').textContent = '₹' + data.packaging_cost.toFixed(2);
             document.getElementById('apiBoxDimensions').textContent = `${data.selected_box.dimensions.length} × ${data.selected_box.dimensions.width} × ${data.selected_box.dimensions.height} cm`;
             document.getElementById('apiBoxMaxWeight').textContent = data.selected_box.max_weight_capacity.toFixed(3) + ' kg';
             document.getElementById('apiOrderWeight').textContent = data.total_order_weight.toFixed(3) + ' kg';

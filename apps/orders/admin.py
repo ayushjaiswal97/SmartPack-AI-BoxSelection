@@ -137,7 +137,7 @@ class OrderAdmin(admin.ModelAdmin):
     @admin.display(description="Packaging Cost")
     def display_packaging_cost(self, obj: Order) -> str:
         if obj.packaging_cost is not None:
-            return f"${obj.packaging_cost:.2f}"
+            return f"₹{obj.packaging_cost:.2f}"
         return "—"
 
     @admin.action(description="Run 3D Box Selection for selected orders")

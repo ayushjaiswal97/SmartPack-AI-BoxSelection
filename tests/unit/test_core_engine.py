@@ -180,13 +180,13 @@ def test_select_optimal_box_lowest_cost():
 def test_select_optimal_box_deterministic_tie_breaking():
     """
     Tie-breaking hierarchy:
-    When packaging costs are identical ($2.50), the box with smaller volume is selected
+    When packaging costs are identical (₹2.50), the box with smaller volume is selected
     to minimize void fill and dimensional courier charges.
     """
     items = [ItemDTO("1", "SKU-1", "Small Product", Decimal("5"), Decimal("5"), Decimal("5"), Decimal("0.200"))]
-    # Box A: 15x15x15 = 3375 cm³, Cost $2.50
+    # Box A: 15x15x15 = 3375 cm³, Cost ₹2.50
     box_smaller = BoxDTO(1, "Smaller Box", Decimal("15"), Decimal("15"), Decimal("15"), Decimal("10"), Decimal("2.50"))
-    # Box B: 25x25x25 = 15625 cm³, Cost $2.50
+    # Box B: 25x25x25 = 15625 cm³, Cost ₹2.50
     box_larger = BoxDTO(2, "Larger Box", Decimal("25"), Decimal("25"), Decimal("25"), Decimal("10"), Decimal("2.50"))
 
     winning_result, _ = select_optimal_box(items, [box_larger, box_smaller])

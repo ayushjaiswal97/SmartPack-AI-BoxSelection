@@ -127,7 +127,7 @@ class Box(models.Model):
         max_digits=10,
         decimal_places=2,
         validators=[MinValueValidator(Decimal('0.00'))],
-        help_text="Procurement or unit cost of the packaging material ($). Must be >= 0.",
+        help_text="Procurement or unit cost of the packaging material (₹). Must be >= 0.",
     )
     is_active = models.BooleanField(
         default=True,
@@ -179,7 +179,7 @@ class Box(models.Model):
     def __str__(self) -> str:
         return (
             f"{self.name} ({self.internal_length}x{self.internal_width}x{self.internal_height} cm, "
-            f"Cap: {self.max_weight_capacity} kg, Cost: ${self.packaging_cost})"
+            f"Cap: {self.max_weight_capacity} kg, Cost: ₹{self.packaging_cost})"
         )
 
     @property

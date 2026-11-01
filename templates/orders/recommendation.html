@@ -57,7 +57,7 @@
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
                         <div class="kpi-label">Optimal Packaging Cost</div>
-                        <div class="kpi-value text-success font-mono">${{ order.packaging_cost }}</div>
+                        <div class="kpi-value text-success font-mono">₹{{ order.packaging_cost }}</div>
                     </div>
                     <div class="kpi-icon-bubble bg-success-subtle text-success">
                         <i class="bi bi-currency-dollar"></i>
@@ -129,7 +129,7 @@
                 <div class="card-body p-4">
                     <h3 class="card-title fw-bold text-slate-900 mb-1">{{ order.selected_box.name }}</h3>
                     <div class="display-6 fw-bold text-success font-mono mb-3">
-                        ${{ order.packaging_cost }}
+                        ₹{{ order.packaging_cost }}
                         <span class="fs-6 text-muted fw-normal">/ unit cost</span>
                     </div>
 
@@ -333,7 +333,7 @@
                             <span class="font-mono text-slate-700">{{ row.box.max_weight_capacity }} kg</span>
                         </td>
                         <td>
-                            <span class="font-mono fw-bold text-slate-900">${{ row.cost }}</span>
+                            <span class="font-mono fw-bold text-slate-900">₹{{ row.cost }}</span>
                         </td>
                         <td>
                             {% if row.weight_feasible %}

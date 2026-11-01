@@ -31,7 +31,7 @@ def test_box_list_view_renders(client, sample_box):
     content = resp.content.decode()
     assert "Shipping Box Inventory" in content
     assert "Test Mailer Box BX-1" in content
-    assert "$1.45" in content
+    assert "₹1.45" in content
     assert "22.00 × 16.00 × 10.00 cm" in content
 
 

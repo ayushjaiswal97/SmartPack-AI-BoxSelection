@@ -206,7 +206,7 @@ class PackingAlgorithmTestCase(SimpleTestCase):
     def test_deterministic_tie_breaking(self):
         """
         Deterministic tie-breaking:
-        When multiple candidate boxes have identical cost ($2.00), the tie is deterministically broken by:
+        When multiple candidate boxes have identical cost (₹2.00), the tie is deterministically broken by:
         1. Smaller volume (tighter cavity)
         2. Smaller weight limit (better capacity matching)
         3. Alphabetical box name

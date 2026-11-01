@@ -105,7 +105,7 @@ class BoxAdmin(admin.ModelAdmin):
 
     @admin.display(description="Unit Packaging Cost")
     def display_cost(self, obj: Box) -> str:
-        return f"${obj.packaging_cost:.2f}"
+        return f"₹{obj.packaging_cost:.2f}"
 
     @admin.action(description="Mark selected boxes as Active for packing engine")
     def activate_boxes(self, request, queryset):

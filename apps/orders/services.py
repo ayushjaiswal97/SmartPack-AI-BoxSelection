@@ -203,7 +203,7 @@ class PackagingService:
             })
 
         explanation = (
-            f"Box '{winning_result.box.name}' selected as the lowest-cost feasible box (${winning_result.box.packaging_cost})."
+            f"Box '{winning_result.box.name}' selected as the lowest-cost feasible box (₹{winning_result.box.packaging_cost})."
             if is_feasible and winning_result.box
             else (winning_result.failure_reason if winning_result else "No suitable box could be found.")
         )

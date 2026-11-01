@@ -181,7 +181,7 @@
                         {% if order.selected_box %}
                             <div class="fw-semibold text-slate-900">{{ order.selected_box.name }}</div>
                             <div class="text-success small fw-bold font-mono">
-                                ${{ order.packaging_cost }} packaging
+                                ₹{{ order.packaging_cost }} packaging
                             </div>
                         {% elif order.status == 'FAILED' %}
                             <span class="text-danger small fw-semibold">

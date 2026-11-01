@@ -465,7 +465,7 @@ def select_optimal_box(
     all items in an order.
     
     Tie-breaking hierarchy when costs are equal:
-      1. Lowest packaging cost ($) (Primary objective)
+      1. Lowest packaging cost (₹) (Primary objective)
       2. Smallest internal volume (cm³) (Minimizes void fill and carrier dimensional freight)
       3. Smallest maximum weight capacity (kg) (Preserves heavy-duty boxes for heavier orders)
       4. Alphabetical box name (Guarantees 100% deterministic reproducibility)

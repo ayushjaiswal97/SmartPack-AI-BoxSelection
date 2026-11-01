@@ -1,0 +1,74 @@
+# What I Learned from the PackSmart Project
+
+While developing PackSmart, I gained practical experience in building a web application using Python and Django. I also improved my understanding of backend development, database design, algorithms, frontend integration, and testing.
+
+## 1. Requirement Analysis
+
+- How to understand project requirements before starting development.
+- How to divide a large project into smaller tasks.
+- How to identify important business rules and possible edge cases.
+
+## 2. Python and Django
+
+- Creating Django models for products, boxes, orders, and order items.
+- Managing database operations using Django ORM.
+- Understanding model relationships, views, URLs, and service classes.
+- Separating business logic from views to keep the code organized.
+
+## 3. Database Design
+
+- Designing database tables based on project requirements.
+- Using ForeignKey relationships to connect different models.
+- Applying field validation and database constraints.
+- Using DecimalField for accurate storage of dimensions, weights, and prices.
+
+## 4. Box Selection Algorithm
+
+This was the most challenging part of the project.
+
+- Handling six possible orientations of a product.
+- Calculating total product weight based on quantity.
+- Checking whether products can physically fit inside a box.
+- Detecting overlapping products during placement.
+- Checking the maximum weight capacity of boxes.
+- Selecting the lowest-cost box that can accommodate the order.
+
+I also understood that checking total volume alone cannot guarantee that products will fit inside a box.
+
+## 5. API and Frontend Development
+
+- Creating REST API endpoints using Django.
+- Sending and receiving JSON data between frontend and backend.
+- Using JavaScript Fetch API to communicate with Django.
+- Building a warehouse dashboard using HTML, CSS, JavaScript, and Bootstrap 5.
+- Handling form validation, API errors, and displaying dynamic data.
+
+## 6. Testing and Debugging
+
+- Writing automated test cases using Pytest.
+- Testing models, APIs, and the box selection algorithm.
+- Checking different product dimensions, quantities, and weight limits.
+- Finding and fixing errors by comparing expected and actual results.
+- Performing manual testing to verify application functionality.
+
+## 7. Security and Code Quality
+
+- Understanding CSRF protection and its importance.
+- Learning about SQL injection and XSS risks.
+- Using Django's `json_script` to safely pass data to JavaScript.
+- Improving database queries to avoid unnecessary operations.
+- Writing clean, reusable, and maintainable code.
+
+## 8. Using AI Tools
+
+- Using AI to understand requirements and plan development tasks.
+- Writing prompts to get technical suggestions and code examples.
+- Using AI to identify errors and explore possible solutions.
+- Reviewing AI-generated code instead of accepting it directly.
+- Correcting AI suggestions when they did not match the actual project requirements.
+
+## 9. Overall Experience
+
+This project gave me practical experience in developing a complete web application. I improved my technical skills and understood how different parts of an application work together.
+
+The most important thing I learned is that AI can help during development, but understanding the code, checking its correctness, and taking responsibility for the final implementation are still the developer's job.

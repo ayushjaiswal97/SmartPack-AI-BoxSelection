@@ -97,7 +97,7 @@ def test_recommendation_view(client):
     response = client.get(reverse('orders:recommendation', kwargs={'order_number': order.order_number}))
     assert response.status_code == 200
     assert "Mailer Box" in response.content.decode()
-    assert "$1.20" in response.content.decode()
+    assert "₹1.20" in response.content.decode()
 
 
 @pytest.mark.django_db
@@ -143,7 +143,7 @@ def test_recommendation_history_view(client):
     assert "Recommendation History" in content
     assert "ORD-HIST-001" in content
     assert "History Audit Box" in content
-    assert "$2.50" in content
+    assert "₹2.50" in content
 
 
 @pytest.mark.django_db

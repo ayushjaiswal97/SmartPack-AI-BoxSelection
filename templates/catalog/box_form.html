@@ -129,7 +129,7 @@
                         </div>
                         <div class="col-sm-6">
                             <label class="form-label fw-semibold small text-slate-700">
-                                Unit Packaging Cost ($) <span class="text-danger">*</span>
+                                Unit Packaging Cost (₹) <span class="text-danger">*</span>
                             </label>
                             {{ form.packaging_cost }}
                             <div class="form-text small">Primary optimization objective function value.</div>
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (volLiters > 0 && cost > 0) {
             const costL = (cost / volLiters).toFixed(3);
-            liveCostPerLiter.textContent = '$' + costL + ' / L';
+            liveCostPerLiter.textContent = '₹' + costL + ' / L';
         } else {
             liveCostPerLiter.textContent = '-';
         }

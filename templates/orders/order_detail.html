@@ -99,7 +99,7 @@
                 <div>
                     <div class="kpi-label">Packaging Cost</div>
                     <div class="kpi-value {% if order.packaging_cost %}text-success{% else %}text-muted{% endif %}">
-                        {% if order.packaging_cost %}${{ order.packaging_cost }}{% else %}—{% endif %}
+                        {% if order.packaging_cost %}₹{{ order.packaging_cost }}{% else %}—{% endif %}
                     </div>
                 </div>
                 <div class="kpi-icon-bubble bg-success-subtle text-success">
@@ -228,7 +228,7 @@
                         </div>
                         <div class="d-flex justify-content-between py-1.5 border-bottom">
                             <span class="text-muted">Packaging Material Cost:</span>
-                            <span class="font-mono fw-bold text-success fs-6">${{ order.packaging_cost }}</span>
+                            <span class="font-mono fw-bold text-success fs-6">₹{{ order.packaging_cost }}</span>
                         </div>
                         {% if packing_result %}
                         <div class="d-flex justify-content-between py-1.5 border-bottom">

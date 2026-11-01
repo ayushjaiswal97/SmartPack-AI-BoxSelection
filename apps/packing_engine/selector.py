@@ -40,7 +40,7 @@ class BoxSelectorService:
         for summary in summaries:
             if summary.is_feasible:
                 audit_log.append(
-                    f"Box '{summary.box_name}' feasible: Cost ${summary.packaging_cost} "
+                    f"Box '{summary.box_name}' feasible: Cost ₹{summary.packaging_cost} "
                     f"(Vol: {summary.volume_utilization_pct}%, Wt: {summary.weight_utilization_pct}%)."
                 )
             else:

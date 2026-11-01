@@ -109,8 +109,8 @@ class PackagingService:
         """
         order = cls.get_order_by_identifier(order_identifier)
 
-        # Validate order has items
-        if not order.items.exists():
+        # Validate order has items using prefetched cache
+        if not order.items.all():
             raise EmptyOrderError(f"Order '{order.order_number}' contains no items to pack.")
 
         items = build_item_dtos_from_order(order)
@@ -132,9 +132,8 @@ class PackagingService:
                 order.total_volume = total_volume
 
                 if winning_result and winning_result.is_feasible and winning_result.box:
-                    box_model = Box.objects.get(id=winning_result.box.box_id)
-                    order.selected_box = box_model
-                    order.packaging_cost = box_model.packaging_cost
+                    order.selected_box_id = winning_result.box.box_id
+                    order.packaging_cost = winning_result.box.packaging_cost
                     order.status = Order.Status.EVALUATED
                 else:
                     order.selected_box = None

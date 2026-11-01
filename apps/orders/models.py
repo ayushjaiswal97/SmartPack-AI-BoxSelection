@@ -93,6 +93,11 @@ class Order(models.Model):
         """Generates a unique short order reference."""
         return f"ORD-{uuid.uuid4().hex[:8].upper()}"
 
+    @property
+    def total_order_weight(self) -> Decimal:
+        """Alias for total_weight."""
+        return self.total_weight
+
 
 class OrderItem(models.Model):
     """

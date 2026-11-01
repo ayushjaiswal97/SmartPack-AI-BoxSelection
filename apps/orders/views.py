@@ -2,7 +2,7 @@ import json
 from decimal import Decimal
 from django.contrib import messages
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import DetailView, ListView, View
 from apps.catalog.models import Box, Product
@@ -22,12 +22,20 @@ class DashboardView(View):
         total_products = Product.objects.count()
         total_boxes = Box.objects.count()
         active_boxes = Box.objects.filter(is_active=True).count()
-        total_orders = Order.objects.count()
 
-        orders_awaiting = Order.objects.filter(status=Order.Status.DRAFT).count()
-        orders_evaluated = Order.objects.filter(status=Order.Status.EVALUATED).count()
-        orders_packed = Order.objects.filter(status=Order.Status.PACKED).count()
-        orders_failed = Order.objects.filter(status=Order.Status.FAILED).count()
+        order_stats = Order.objects.aggregate(
+            total=Count('id'),
+            awaiting=Count('id', filter=Q(status=Order.Status.DRAFT)),
+            evaluated=Count('id', filter=Q(status=Order.Status.EVALUATED)),
+            packed=Count('id', filter=Q(status=Order.Status.PACKED)),
+            failed=Count('id', filter=Q(status=Order.Status.FAILED)),
+        )
+
+        total_orders = order_stats['total']
+        orders_awaiting = order_stats['awaiting']
+        orders_evaluated = order_stats['evaluated']
+        orders_packed = order_stats['packed']
+        orders_failed = order_stats['failed']
 
         recent_orders = (
             Order.objects.select_related('selected_box', 'packing_result')
@@ -89,6 +97,7 @@ class OrderSimulatorView(View):
                 'formset': formset,
                 'products': products,
                 'existing_orders': existing_orders,
+                'product_data': product_data,
                 'product_data_json': json.dumps(product_data),
             },
         )
@@ -174,6 +183,7 @@ class OrderSimulatorView(View):
                 'formset': formset,
                 'products': products,
                 'existing_orders': existing_orders,
+                'product_data': product_data,
                 'product_data_json': json.dumps(product_data),
             },
         )
@@ -212,9 +222,11 @@ class OrderRecommendationView(DetailView):
         context['items'] = order.items.select_related('product').all()
         try:
             context['packing_result'] = order.packing_result
+            context['placed_items_manifest'] = order.packing_result.placed_items_manifest
             context['placed_items_json'] = json.dumps(order.packing_result.placed_items_manifest)
         except Exception:
             context['packing_result'] = None
+            context['placed_items_manifest'] = []
             context['placed_items_json'] = '[]'
         return context
 
@@ -261,12 +273,19 @@ class OrderListView(ListView):
         context['current_status'] = self.request.GET.get('status', 'all')
         context['current_sort'] = self.request.GET.get('sort', 'newest')
         
-        # Live status summary counts
-        context['count_all'] = Order.objects.count()
-        context['count_draft'] = Order.objects.filter(status=Order.Status.DRAFT).count()
-        context['count_evaluated'] = Order.objects.filter(status=Order.Status.EVALUATED).count()
-        context['count_packed'] = Order.objects.filter(status=Order.Status.PACKED).count()
-        context['count_failed'] = Order.objects.filter(status=Order.Status.FAILED).count()
+        # Live status summary counts in a single aggregated database roundtrip
+        order_counts = Order.objects.aggregate(
+            total=Count('id'),
+            draft=Count('id', filter=Q(status=Order.Status.DRAFT)),
+            evaluated=Count('id', filter=Q(status=Order.Status.EVALUATED)),
+            packed=Count('id', filter=Q(status=Order.Status.PACKED)),
+            failed=Count('id', filter=Q(status=Order.Status.FAILED)),
+        )
+        context['count_all'] = order_counts['total']
+        context['count_draft'] = order_counts['draft']
+        context['count_evaluated'] = order_counts['evaluated']
+        context['count_packed'] = order_counts['packed']
+        context['count_failed'] = order_counts['failed']
         return context
 
 
@@ -297,12 +316,10 @@ class OrderDetailView(DetailView):
         # Check if packing result exists
         packing_result = getattr(order, 'packing_result', None)
         context['packing_result'] = packing_result
-        if packing_result and packing_result.placements_manifest:
-            context['placements_manifest'] = packing_result.placements_manifest
-            context['evaluated_boxes_summary'] = packing_result.evaluated_boxes_summary
+        if packing_result and hasattr(packing_result, 'placed_items_manifest'):
+            context['placements_manifest'] = packing_result.placed_items_manifest
         else:
             context['placements_manifest'] = []
-            context['evaluated_boxes_summary'] = []
 
         return context
 
@@ -341,13 +358,12 @@ class RecommendationHistoryView(ListView):
         context = super().get_context_data(**kwargs)
         context['search_query'] = self.request.GET.get('q', '').strip()
         context['current_status'] = self.request.GET.get('status', 'all')
-        context['total_evaluations'] = Order.objects.filter(
-            status__in=[Order.Status.EVALUATED, Order.Status.PACKED, Order.Status.FAILED]
-        ).count()
-        context['feasible_count'] = Order.objects.filter(
-            status__in=[Order.Status.EVALUATED, Order.Status.PACKED]
-        ).count()
-        context['infeasible_count'] = Order.objects.filter(
-            status=Order.Status.FAILED
-        ).count()
+        eval_counts = Order.objects.aggregate(
+            total=Count('id', filter=Q(status__in=[Order.Status.EVALUATED, Order.Status.PACKED, Order.Status.FAILED])),
+            feasible=Count('id', filter=Q(status__in=[Order.Status.EVALUATED, Order.Status.PACKED])),
+            infeasible=Count('id', filter=Q(status=Order.Status.FAILED)),
+        )
+        context['total_evaluations'] = eval_counts['total']
+        context['feasible_count'] = eval_counts['feasible']
+        context['infeasible_count'] = eval_counts['infeasible']
         return context

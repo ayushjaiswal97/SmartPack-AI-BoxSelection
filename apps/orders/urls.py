@@ -12,6 +12,8 @@ urlpatterns = [
     path('recommendation/<str:order_number>/', views.OrderRecommendationView.as_view(), name='recommendation'),
     path('orders/<str:order_number>/', views.OrderDetailView.as_view(), name='order_detail'),
 
-    # Packaging Engine API Endpoints
+    # Packaging Engine & Order API Endpoints
+    path('api/orders/', api_views.OrderListCreateAPIView.as_view(), name='api_order_list_create'),
+    path('api/orders/<str:order_id>/', api_views.OrderDetailAPIView.as_view(), name='api_order_detail'),
     path('api/orders/<str:order_id>/recommend-box/', api_views.RecommendBoxAPIView.as_view(), name='api_recommend_box'),
 ]

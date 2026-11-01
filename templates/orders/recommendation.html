@@ -364,8 +364,10 @@
 {% endblock %}
 
 {% block extra_js %}
+{{ placed_items_manifest|json_script:"placed-items-data" }}
 <script>
-    const PLACED_ITEMS = {{ placed_items_json|safe }};
+    const placedItemsElement = document.getElementById('placed-items-data');
+    const PLACED_ITEMS = placedItemsElement ? JSON.parse(placedItemsElement.textContent) : [];
     const BOX_SPECS = {
         length: {% if order.selected_box %}{{ order.selected_box.internal_length }}{% else %}0{% endif %},
         width: {% if order.selected_box %}{{ order.selected_box.internal_width }}{% else %}0{% endif %},

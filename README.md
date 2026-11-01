@@ -345,12 +345,3 @@ pytest tests/test_integration_suite.py -v
 
 ### 3. Isometric 3D Packing Visualization
 *Renders placed items with coordinate wireframes inside the selected box on an interactive HTML5 canvas.*
-
----
-
-## 13. Future Improvements
-
-1. **Multi-Box Order Splitting:** Automatically partitioning orders into two or more boxes when no single container can accommodate the complete order.
-2. **Weight Distribution & Center of Gravity:** Calculating center of mass to prevent shipping boxes from tilting during transit.
-3. **Barcode Scanner Integration:** Adding direct USB/Bluetooth barcode scanner input for picking stations.
-4. **PostgreSQL Cube / Spatial Indexing:** Using spatial database indexing for catalog lookups on high-density inventories ($>10,000$ SKUs).
